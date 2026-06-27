@@ -3,6 +3,29 @@
 All notable changes to this project will be documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — v0.0.2 Roadmap
+
+### Planned: Digital Twin Integration
+The next release focuses on connecting `instrumation-report` to live instrument data
+via the **instrumation** digital twin ecosystem:
+
+- **Live measurement ingestion** — pull readings directly from a digital twin device
+  model instead of manually constructing `Measurement` objects
+- **Streaming report updates** — re-render the HTML report as new measurements arrive
+  from the twin without re-running the full test sequence
+- **Twin metadata in `ReportHeader`** — auto-populate `uut_name`, `uut_serial`,
+  `revision` from the digital twin's device descriptor
+- **Pass/fail telemetry push** — write test results back to the twin's state so
+  downstream dashboards reflect live test status
+- **`generate_json()` export** — machine-readable output for twin data pipelines
+  and CI result aggregators
+
+### Planned: General improvements
+- `Measurement.timestamp` field for time-series test logs
+- CSV export alongside Excel
+- Custom HTML template support via `Report(template_path=...)`
+- `--output` CLI entrypoint so reports can be generated without writing Python
+
 ## [0.0.1] — 2026-06-27
 
 ### Added
