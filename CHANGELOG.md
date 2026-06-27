@@ -5,20 +5,67 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased] — v0.0.2 Roadmap
 
-### Planned: Digital Twin Integration
-The next release focuses on connecting `instrumation-report` to live instrument data
-via the **instrumation** digital twin ecosystem:
+### Planned: instrumation digital twin integration
+`instrumation-report` v0.0.2 will be the official report layer for the
+**[instrumation](https://github.com/abduznik/instrumation)** digital twin platform.
+Instead of constructing `Measurement` objects by hand you will be able to pass a
+live twin handle and the library will pull readings, metadata, and state directly.
 
-- **Live measurement ingestion** — pull readings directly from a digital twin device
-  model instead of manually constructing `Measurement` objects
-- **Streaming report updates** — re-render the HTML report as new measurements arrive
-  from the twin without re-running the full test sequence
-- **Twin metadata in `ReportHeader`** — auto-populate `uut_name`, `uut_serial`,
-  `revision` from the digital twin's device descriptor
-- **Pass/fail telemetry push** — write test results back to the twin's state so
-  downstream dashboards reflect live test status
-- **`generate_json()` export** — machine-readable output for twin data pipelines
-  and CI result aggregators
+```python
+# What the API will look like
+from instrumation import DeviceTwin
+from instrumation_report import Report
+
+twin = DeviceTwin("psu-rack-01")
+report = Report.from_twin(twin)          # header auto-populated from twin descriptor
+report.run_sequence("voltage_rails")     # executes test sequence, captures readings
+report.generate_html("result.html")      # measurements already attached
+twin.push_results(report)                # write pass/fail back to twin state
+```
+
+Specific items:
+- **`Report.from_twin(twin)`** — factory that reads `uut_name`, `uut_serial`,
+  `revision`, and `extra_fields` from the instrumation device descriptor
+- **`Report.run_sequence(name)`** — runs a named test sequence defined in the twin
+  and attaches the resulting `Measurement` objects automatically
+- **Streaming ingestion** — `twin.stream()` yields readings in real-time; report
+  re-renders incrementally as they arrive
+- **`twin.push_results(report)`** — writes the final PASS/FAIL summary back to the
+  twin's live state for dashboard consumption
+- **`generate_json()`** — machine-readable export for twin data pipelines and CI
+  result aggregators
+
+### Planned: PyVISA and ATE instrument adapters
+A thin adapter layer so readings from real bench instruments and ATE racks flow
+into `Measurement` objects without manual string parsing:
+
+```python
+from instrumation_report.adapters import visa, ate
+
+# PyVISA — any GPIB/USB/LAN instrument
+import pyvisa
+rm = pyvisa.ResourceManager()
+dmm = rm.open_resource("GPIB0::22::INSTR")
+m = visa.measure(dmm, name="Output Voltage", unit="V",
+                 query="MEAS:VOLT:DC?", condition=(11.8, 12.2))
+
+# Generic ATE / ICT rack via socket or serial
+m = ate.measure(rack, slot=3, channel=1, name="Continuity",
+                condition=lambda r: r < 1.0)
+
+report.add(m)
+```
+
+Specific items:
+- **`instrumation_report.adapters.visa`** — wraps a `pyvisa.Resource`, sends a
+  SCPI query string, parses the float response, returns a `Measurement`
+- **`instrumation_report.adapters.ate`** — generic slot/channel abstraction for
+  ICT and functional ATE racks (National Instruments, Keysight, Pickering, etc.)
+- **`instrumation_report.adapters.serial`** — reads one line from a serial port
+  (e.g. Arduino test jig) and parses it into a `Measurement`
+- All adapters are optional extras so they don't pull in hardware SDKs for users
+  who only need offline report generation
+  (`pip install "instrumation-report[visa]"`, `[ate]`, etc.)
 
 ### Planned: General improvements
 - `Measurement.timestamp` field for time-series test logs
