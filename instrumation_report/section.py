@@ -9,7 +9,7 @@ from .measurement import Measurement
 @dataclass
 class TestTable:
     title: str
-    sub_number: str
+    sub_number: str = ""
     measurements: List[Measurement] = field(default_factory=list)
 
     def add(self, measurement: Measurement) -> None:

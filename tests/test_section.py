@@ -1,6 +1,11 @@
 from instrumation_report import Section, TestTable, Measurement
 
 
+def test_test_table_sub_number_default():
+    t = TestTable(title="No Number")
+    assert t.sub_number == ""
+
+
 def test_test_table_add():
     t = TestTable(title="Power Checks", sub_number="1.1")
     m = Measurement("V", 3.3, "V", condition=(3.2, 3.4))
