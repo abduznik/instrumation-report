@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ header.title }}</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: #f0f2f5;
+      color: #1a1a1a;
+      padding: 2rem;
+      font-size: 14px;
+    }
+
+    .page {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    /* ── Header card ── */
+    .report-header {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+      padding: 1.75rem 2rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .report-header h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #111;
+    }
+
+    .report-header .subtitle {
+      font-size: 1rem;
+      color: #555;
+      margin-top: 0.2rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.6rem 1.5rem;
+    }
+
+    .meta-item { display: flex; flex-direction: column; }
+    .meta-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: #888; font-weight: 600; }
+    .meta-value { font-size: 0.9rem; color: #222; font-weight: 500; }
+
+    /* ── Section ── */
+    .section { margin-bottom: 1.75rem; }
+
+    .section-heading {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #111;
+      margin-bottom: 0.2rem;
+    }
+
+    .section-subtitle {
+      font-size: 0.85rem;
+      color: #666;
+      margin-bottom: 0.9rem;
+    }
+
+    /* ── Table card ── */
+    .table-card {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.07);
+      margin-bottom: 1.2rem;
+      overflow: hidden;
+    }
+
+    .table-card-header {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid #e8e8e8;
+      display: flex;
+      align-items: baseline;
+      gap: 0.6rem;
+    }
+
+    .table-card-number {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #888;
+      letter-spacing: 0.04em;
+    }
+
+    .table-card-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #222;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+
+    th {
+      padding: 0.55rem 1rem;
+      text-align: left;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #666;
+      border-bottom: 1px solid #e8e8e8;
+      background: #fafafa;
+    }
+
+    td {
+      padding: 0.6rem 1rem;
+      border-bottom: 1px solid #f2f2f2;
+      vertical-align: middle;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafbfc; }
+
+    .badge {
+      display: inline-block;
+      padding: 0.18rem 0.6rem;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    .badge-pass { background: #dcfce7; color: #15803d; }
+    .badge-fail { background: #fee2e2; color: #b91c1c; }
+    .badge-na   { background: #f1f5f9; color: #94a3b8; }
+
+    .test-num { font-family: monospace; color: #888; font-size: 0.8rem; }
+    .notes-cell { color: #555; font-style: italic; max-width: 200px; }
+
+    /* ── Summary ── */
+    .summary-card {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+      padding: 1.25rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .summary-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #888;
+      flex: 0 0 100%;
+      margin-bottom: 0.25rem;
+    }
+
+    .summary-stat { display: flex; flex-direction: column; align-items: center; }
+    .summary-num { font-size: 2rem; font-weight: 700; line-height: 1; }
+    .summary-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: #888; margin-top: 0.2rem; }
+
+    .num-total  { color: #374151; }
+    .num-pass   { color: #15803d; }
+    .num-fail   { color: #b91c1c; }
+    .num-rate   { color: #1d4ed8; }
+
+    .divider { width: 1px; height: 48px; background: #e5e7eb; }
+
+    /* ── Print / PDF ────────────────────────────────────────────────────── */
+    @media print {
+      body {
+        background: #fff;
+        padding: 0;
+        font-size: 11px;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .page { max-width: 100%; }
+
+      /* Cards become flat bordered boxes — no shadows, no rounded corners */
+      .report-header,
+      .table-card,
+      .summary-card {
+        box-shadow: none;
+        border-radius: 0;
+        border: 1px solid #d1d5db;
+      }
+
+      /* Header stays on its own page slice — never orphaned */
+      .report-header {
+        break-after: avoid;
+        page-break-after: avoid;
+      }
+
+      /* Each section starts on a new page if it doesn't fit */
+      .section {
+        break-inside: avoid-page;
+        page-break-inside: auto;
+      }
+
+      /* Section heading + its first table always stay together */
+      .section-heading,
+      .section-subtitle {
+        break-after: avoid;
+        page-break-after: avoid;
+      }
+
+      /* Table cards never split mid-card if they're short enough;
+         for long tables, rows can break but the header row repeats */
+      .table-card {
+        break-inside: auto;
+        page-break-inside: auto;
+        margin-bottom: 0.6rem;
+      }
+
+      /* Table card header (sub_number + title) stays with the first data row */
+      .table-card-header {
+        break-after: avoid;
+        page-break-after: avoid;
+      }
+
+      /* Repeat column headers on every page for long tables */
+      thead { display: table-header-group; }
+      tfoot { display: table-footer-group; }
+
+      /* No row orphans/widows — a row that starts a page carries at least 2 rows */
+      tr {
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+
+      /* Summary always starts on a fresh line and never splits */
+      .summary-card {
+        break-before: auto;
+        page-break-before: auto;
+        break-inside: avoid;
+        page-page-inside: avoid;
+        margin-top: 1rem;
+      }
+
+      /* Suppress interactive chrome artifacts */
+      tr:hover td { background: transparent; }
+    }
+
+    @page {
+      size: A4;
+      margin: 18mm 15mm 20mm 15mm;
+
+      @bottom-center {
+        content: counter(page) " / " counter(pages);
+        font-family: system-ui, sans-serif;
+        font-size: 9px;
+        color: #9ca3af;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Header -->
+  <div class="report-header">
+    <h1>{{ header.title }}</h1>
+    {% if header.subtitle %}<p class="subtitle">{{ header.subtitle }}</p>{% endif %}
+    <div class="meta-grid">
+      {% if header.engineer %}
+      <div class="meta-item">
+        <span class="meta-label">Engineer</span>
+        <span class="meta-value">{{ header.engineer }}</span>
+      </div>
+      {% endif %}
+      {% if header.uut_name %}
+      <div class="meta-item">
+        <span class="meta-label">UUT</span>
+        <span class="meta-value">{{ header.uut_name }}</span>
+      </div>
+      {% endif %}
+      {% if header.uut_serial %}
+      <div class="meta-item">
+        <span class="meta-label">Serial</span>
+        <span class="meta-value">{{ header.uut_serial }}</span>
+      </div>
+      {% endif %}
+      {% if header.revision %}
+      <div class="meta-item">
+        <span class="meta-label">Revision</span>
+        <span class="meta-value">{{ header.revision }}</span>
+      </div>
+      {% endif %}
+      <div class="meta-item">
+        <span class="meta-label">Date</span>
+        <span class="meta-value">{{ header.date }}</span>
+      </div>
+      {% for key, val in header.extra_fields.items() %}
+      <div class="meta-item">
+        <span class="meta-label">{{ key }}</span>
+        <span class="meta-value">{{ val }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Sections -->
+  {% for section in sections %}
+  <div class="section">
+    <div class="section-heading">{{ section.number }}. {{ section.title }}</div>
+    {% if section.subtitle %}<div class="section-subtitle">{{ section.subtitle }}</div>{% endif %}
+
+    {% for table in section.tables %}
+    <div class="table-card">
+      <div class="table-card-header">
+        <span class="table-card-number">{{ table.sub_number }}</span>
+        <span class="table-card-title">{{ table.title }}</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Test No.</th>
+            <th>Name</th>
+            <th>Value</th>
+            <th>Unit</th>
+            <th>Expected</th>
+            <th>Pass / Fail</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in table.measurements %}
+          <tr>
+            <td class="test-num">{{ m.test_number }}</td>
+            <td>{{ m.name }}</td>
+            <td><strong>{{ m.value }}</strong></td>
+            <td>{{ m.unit }}</td>
+            <td>{{ m.expected }}</td>
+            <td>
+              {% if m.status == "PASS" %}
+                <span class="badge badge-pass">PASS</span>
+              {% elif m.status == "FAIL" %}
+                <span class="badge badge-fail">FAIL</span>
+              {% else %}
+                <span class="badge badge-na">N/A</span>
+              {% endif %}
+            </td>
+            <td class="notes-cell">{{ m.notes }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endfor %}
+  </div>
+  {% endfor %}
+
+  <!-- Summary -->
+  <div class="summary-card">
+    <span class="summary-title">Summary</span>
+    <div class="summary-stat">
+      <span class="summary-num num-total">{{ summary.total }}</span>
+      <span class="summary-label">Total</span>
+    </div>
+    <div class="divider"></div>
+    <div class="summary-stat">
+      <span class="summary-num num-pass">{{ summary.passed }}</span>
+      <span class="summary-label">Passed</span>
+    </div>
+    <div class="summary-stat">
+      <span class="summary-num num-fail">{{ summary.failed }}</span>
+      <span class="summary-label">Failed</span>
+    </div>
+    <div class="divider"></div>
+    <div class="summary-stat">
+      <span class="summary-num num-rate">{{ summary.pass_rate }}%</span>
+      <span class="summary-label">Pass Rate</span>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

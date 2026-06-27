@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>API Reference — instrumation-report</title>
+  <link rel="stylesheet" href="assets/style.css" />
+  <style>
+    .api-class {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 2.5rem;
+      overflow: hidden;
+    }
+    .api-class-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--code-bg);
+    }
+    .api-class-header h2 {
+      font-family: "SF Mono","Fira Code",monospace;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--accent2);
+      margin: 0;
+      padding: 0;
+      border: none;
+    }
+    .api-class-header p { font-size: .82rem; color: var(--muted); margin: .3rem 0 0; }
+    .api-body { padding: 1.1rem 1.25rem; }
+
+    .param-table { width: 100%; border-collapse: collapse; font-size: .82rem; margin-bottom: .5rem; }
+    .param-table th { text-align: left; padding: .4rem .75rem; font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); border-bottom: 1px solid var(--border); }
+    .param-table td { padding: .45rem .75rem; border-bottom: 1px solid rgba(255,255,255,.04); vertical-align: top; }
+    .param-table tr:last-child td { border-bottom: none; }
+    .param-name { color: var(--accent2); font-family: monospace; font-size: .82rem; }
+    .param-type { color: var(--accent); font-family: monospace; font-size: .78rem; }
+    .param-default { color: var(--muted); font-family: monospace; font-size: .78rem; }
+    .param-desc { color: var(--muted); font-size: .8rem; }
+
+    .method-row {
+      display: flex;
+      align-items: baseline;
+      gap: .75rem;
+      padding: .6rem 0;
+      border-bottom: 1px solid rgba(255,255,255,.04);
+    }
+    .method-row:last-child { border-bottom: none; }
+    .method-sig { font-family: monospace; font-size: .82rem; color: var(--text); flex-shrink: 0; }
+    .method-desc { font-size: .82rem; color: var(--muted); }
+
+    .toc {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 2rem;
+      font-size: .85rem;
+    }
+    .toc p { color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .07em; font-weight: 700; margin-bottom: .5rem; }
+    .toc a { color: var(--accent); display: block; padding: .15rem 0; }
+  </style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <a class="nav-brand" href="index.html"><span>instrumation</span>-report</a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="get-started.html">Get Started</a>
+    <a href="examples.html">Examples</a>
+    <a href="api.html" class="active">API</a>
+    <a href="try.html">Try It</a>
+    <a href="https://github.com/abduznik/instrumation-report" class="nav-gh">GitHub ↗</a>
+    <button class="theme-btn" onclick="toggleTheme()" title="Toggle theme">
+      <span class="icon-sun">☀︎</span>
+      <span class="icon-moon">◑</span>
+    </button>
+  </div>
+</nav>
+
+<div class="page-wrap prose">
+
+  <div class="badge-row"><span class="badge badge-blue">Reference</span></div>
+  <h1>API Reference</h1>
+  <p>Complete reference for every public class and method in <strong>instrumation-report 0.0.1</strong>.</p>
+  <hr />
+
+  <div class="toc">
+    <p>On this page</p>
+    <a href="#measurement">Measurement</a>
+    <a href="#reportheader">ReportHeader</a>
+    <a href="#testtable">TestTable</a>
+    <a href="#section">Section</a>
+    <a href="#report">Report</a>
+    <a href="#conditions">Condition types</a>
+  </div>
+
+  <!-- Measurement -->
+  <div class="api-class" id="measurement">
+    <div class="api-class-header">
+      <h2>Measurement</h2>
+      <p>Dataclass. A single measured value with optional pass/fail evaluation.</p>
+    </div>
+    <div class="api-body">
+      <table class="param-table">
+        <thead><tr><th>Field</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td class="param-name">name</td><td class="param-type">str</td><td class="param-default">required</td><td class="param-desc">Label for the measurement row.</td></tr>
+          <tr><td class="param-name">value</td><td class="param-type">float</td><td class="param-default">required</td><td class="param-desc">Measured numeric value.</td></tr>
+          <tr><td class="param-name">unit</td><td class="param-type">str</td><td class="param-default">""</td><td class="param-desc">Unit string, e.g. <code>"V"</code>, <code>"Hz"</code>, <code>"dB"</code>.</td></tr>
+          <tr><td class="param-name">condition</td><td class="param-type">tuple | callable | float | None</td><td class="param-default">None</td><td class="param-desc">Pass/fail rule. See <a href="#conditions">Condition types</a>.</td></tr>
+          <tr><td class="param-name">test_number</td><td class="param-type">str</td><td class="param-default">""</td><td class="param-desc">Procedure reference, e.g. <code>"1.1.3"</code>.</td></tr>
+          <tr><td class="param-name">expected</td><td class="param-type">str</td><td class="param-default">""</td><td class="param-desc">Human-readable expected value, e.g. <code>"3.2–3.4 V"</code>.</td></tr>
+          <tr><td class="param-name">notes</td><td class="param-type">str</td><td class="param-default">""</td><td class="param-desc">Short annotation shown in the Notes column.</td></tr>
+          <tr><td class="param-name">description</td><td class="param-type">str</td><td class="param-default">""</td><td class="param-desc">Longer description (not shown in table by default).</td></tr>
+        </tbody>
+      </table>
+
+      <p style="margin-top:.75rem;font-size:.82rem;color:var(--muted)"><strong style="color:var(--text)">Properties</strong></p>
+      <div class="method-row">
+        <span class="method-sig">.evaluate() → bool | None</span>
+        <span class="method-desc">Evaluates the condition. Returns <code>True</code>, <code>False</code>, or <code>None</code> (no condition).</span>
+      </div>
+      <div class="method-row">
+        <span class="method-sig">.status → str</span>
+        <span class="method-desc">Returns <code>"PASS"</code>, <code>"FAIL"</code>, or <code>"N/A"</code> based on <code>evaluate()</code>.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ReportHeader -->
+  <div class="api-class" id="reportheader">
+    <div class="api-class-header">
+      <h2>ReportHeader</h2>
+      <p>Dataclass. UUT metadata shown in the report header block.</p>
+    </div>
+    <div class="api-body">
+      <table class="param-table">
+        <thead><tr><th>Field</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td class="param-name">title</td><td class="param-type">str</td><td class="param-default">required</td><td class="param-desc">Main report title.</td></tr>
+          <tr><td class="param-name">subtitle</td><td class="param-type">str</td><td class="param-default">""</td><td class="param-desc">Secondary line shown below the title.</td></tr>
+          <tr><td class="param-name">engineer</td><td class="param-type">str</td><td class="param-default">""</td><td class="param-desc">Engineer / tester name.</td></tr>
+          <tr><td class="param-name">uut_name</td><td class="param-type">str</td><td class="param-default">""</td><td class="param-desc">Name of the unit under test.</td></tr>
+          <tr><td class="param-name">uut_serial</td><td class="param-type">str</td><td class="param-default">""</td><td class="param-desc">Serial number of the UUT.</td></tr>
+          <tr><td class="param-name">revision</td><td class="param-type">str</td><td class="param-default">""</td><td class="param-desc">Hardware or firmware revision.</td></tr>
+          <tr><td class="param-name">date</td><td class="param-type">str</td><td class="param-default">today (ISO)</td><td class="param-desc">Test date. Defaults to <code>datetime.date.today().isoformat()</code>.</td></tr>
+          <tr><td class="param-name">extra_fields</td><td class="param-type">dict</td><td class="param-default">{}</td><td class="param-desc">Arbitrary key/value pairs added to the header grid.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TestTable -->
+  <div class="api-class" id="testtable">
+    <div class="api-class-header">
+      <h2>TestTable</h2>
+      <p>Dataclass. A numbered table of measurements inside a Section.</p>
+    </div>
+    <div class="api-body">
+      <table class="param-table">
+        <thead><tr><th>Field</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td class="param-name">title</td><td class="param-type">str</td><td class="param-default">required</td><td class="param-desc">Table heading.</td></tr>
+          <tr><td class="param-name">sub_number</td><td class="param-type">str</td><td class="param-default">required</td><td class="param-desc">Sub-section identifier, e.g. <code>"1.1"</code>.</td></tr>
+          <tr><td class="param-name">measurements</td><td class="param-type">list[Measurement]</td><td class="param-default">[]</td><td class="param-desc">Populated via <code>add()</code>.</td></tr>
+        </tbody>
+      </table>
+      <div class="method-row">
+        <span class="method-sig">.add(measurement: Measurement)</span>
+        <span class="method-desc">Append a measurement to this table.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section -->
+  <div class="api-class" id="section">
+    <div class="api-class-header">
+      <h2>Section</h2>
+      <p>Dataclass. A top-level section containing one or more TestTables.</p>
+    </div>
+    <div class="api-body">
+      <table class="param-table">
+        <thead><tr><th>Field</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td class="param-name">number</td><td class="param-type">str</td><td class="param-default">required</td><td class="param-desc">Section number, e.g. <code>"1"</code>, <code>"2"</code>.</td></tr>
+          <tr><td class="param-name">title</td><td class="param-type">str</td><td class="param-default">required</td><td class="param-desc">Section heading.</td></tr>
+          <tr><td class="param-name">subtitle</td><td class="param-type">str</td><td class="param-default">""</td><td class="param-desc">Optional sub-heading shown below the section title.</td></tr>
+          <tr><td class="param-name">tables</td><td class="param-type">list[TestTable]</td><td class="param-default">[]</td><td class="param-desc">Populated via <code>add_table()</code>.</td></tr>
+        </tbody>
+      </table>
+      <div class="method-row">
+        <span class="method-sig">.add_table(table: TestTable)</span>
+        <span class="method-desc">Append a TestTable to this section.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Report -->
+  <div class="api-class" id="report">
+    <div class="api-class-header">
+      <h2>Report</h2>
+      <p>Main class. Holds the header, sections, and flat measurements. Drives output generation.</p>
+    </div>
+    <div class="api-body">
+      <p style="font-size:.82rem;color:var(--muted);margin-bottom:.75rem">
+        <strong style="color:var(--text)">Constructor</strong> —
+        <code>Report(header: ReportHeader = None)</code>
+      </p>
+      <p style="font-size:.82rem;color:var(--muted);margin-bottom:.75rem">
+        If <code>header</code> is omitted, a default header with title <em>"Measurement Report"</em> and today's date is used.
+      </p>
+
+      <div class="method-row">
+        <span class="method-sig">.add_section(section: Section)</span>
+        <span class="method-desc">Add a structured section to the report.</span>
+      </div>
+      <div class="method-row">
+        <span class="method-sig">.add(measurement: Measurement)</span>
+        <span class="method-desc">Flat backwards-compatible API. Measurements appear after all sections.</span>
+      </div>
+      <div class="method-row">
+        <span class="method-sig">.generate_html(path: str)</span>
+        <span class="method-desc">Write a self-contained HTML report. Dependencies: <code>jinja2</code>.</span>
+      </div>
+      <div class="method-row">
+        <span class="method-sig">.generate_excel(path: str)</span>
+        <span class="method-desc">Write a structured <code>.xlsx</code> report with coloured rows. Dependencies: <code>openpyxl</code>.</span>
+      </div>
+      <div class="method-row">
+        <span class="method-sig">.generate_pdf(path: str)</span>
+        <span class="method-desc">Write an A4 PDF via weasyprint. Requires <code>pip install "instrumation-report[pdf]"</code> and system Pango libraries. Raises <code>ImportError</code> if weasyprint is not installed.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Conditions -->
+  <h2 id="conditions">Condition types</h2>
+  <p>The <code>condition</code> argument on <code>Measurement</code> accepts four forms:</p>
+
+  <table class="wiki-table">
+    <thead><tr><th>Type</th><th>Example</th><th>Passes when</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Range tuple</td>
+        <td><code>(3.2, 3.4)</code></td>
+        <td style="color:var(--text)"><code>lo &lt;= value &lt;= hi</code></td>
+        <td style="color:var(--muted)">Inclusive on both ends</td>
+      </tr>
+      <tr>
+        <td>Lambda</td>
+        <td><code>lambda v: v &gt; 1000</code></td>
+        <td style="color:var(--text)">Callable returns truthy</td>
+        <td style="color:var(--muted)">Any callable <code>float → bool</code></td>
+      </tr>
+      <tr>
+        <td>Threshold float</td>
+        <td><code>15.0</code></td>
+        <td style="color:var(--text)"><code>value &gt;= threshold</code></td>
+        <td style="color:var(--muted)">Useful for minimum specs</td>
+      </tr>
+      <tr>
+        <td>None</td>
+        <td><em>omit argument</em></td>
+        <td style="color:var(--muted)">N/A — no evaluation</td>
+        <td style="color:var(--muted)">Good for informational rows</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-info">
+    Passing an unsupported type (e.g. a string) to <code>condition</code> raises <code>TypeError</code> at evaluation time.
+  </div>
+
+</div>
+
+<footer class="site-footer">
+  instrumation-report · MIT License ·
+  <a href="https://github.com/abduznik/instrumation-report">GitHub</a> ·
+  <a href="https://pypi.org/project/instrumation-report/">PyPI</a>
+</footer>
+<script>
+(function(){
+  const saved = localStorage.getItem("ir-theme");
+  if (saved === "light") document.documentElement.classList.add("light");
+})();
+function toggleTheme() {
+  const light = document.documentElement.classList.toggle("light");
+  localStorage.setItem("ir-theme", light ? "light" : "dark");
+}
+</script>
+</body>
+</html>

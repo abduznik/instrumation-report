@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Get Started — instrumation-report</title>
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+
+<nav class="site-nav">
+  <a class="nav-brand" href="index.html"><span>instrumation</span>-report</a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="get-started.html" class="active">Get Started</a>
+    <a href="examples.html">Examples</a>
+    <a href="api.html">API</a>
+    <a href="try.html">Try It</a>
+    <a href="https://github.com/abduznik/instrumation-report" class="nav-gh">GitHub ↗</a>
+    <button class="theme-btn" onclick="toggleTheme()" title="Toggle theme">
+      <span class="icon-sun">☀︎</span>
+      <span class="icon-moon">◑</span>
+    </button>
+  </div>
+</nav>
+
+<div class="page-wrap prose">
+
+  <div class="badge-row"><span class="badge badge-blue">Tutorial</span></div>
+  <h1>Get Started</h1>
+  <p>From zero to a professional PDF test report in under five minutes.</p>
+  <hr />
+
+  <!-- Step 1 -->
+  <h2>1 · Install</h2>
+  <p>Requires Python 3.10 or later.</p>
+  <div class="install-strip"><span class="prompt">$</span> pip install instrumation-report</div>
+
+  <p>For PDF export, install the <code>[pdf]</code> extra which pulls in
+     <a href="https://weasyprint.org" target="_blank">weasyprint</a>
+     (also needs system libraries — see
+     <a href="https://doc.courtbouillon.org/weasyprint/stable/first_steps.html" target="_blank">weasyprint docs</a>):</p>
+  <div class="install-strip"><span class="prompt">$</span> pip install "instrumation-report[pdf]"</div>
+
+  <hr />
+
+  <!-- Step 2 -->
+  <h2>2 · Minimal example</h2>
+  <p>The simplest possible report — no header, no sections, just a flat list of measurements.</p>
+
+  <div class="code-block">
+    <div class="code-block-header"><span>minimal.py</span><button class="copy-btn" onclick="copyCode('c1')">copy</button></div>
+    <pre id="c1"><span class="kw">from</span> instrumation_report <span class="kw">import</span> <span class="cls">Report</span>, <span class="cls">Measurement</span>
+
+r <span class="op">=</span> <span class="cls">Report</span>()
+r.<span class="fn">add</span>(<span class="cls">Measurement</span>(<span class="str">"3.3V Rail"</span>,  <span class="num">3.31</span>, <span class="str">"V"</span>,  condition<span class="op">=</span>(<span class="num">3.2</span>, <span class="num">3.4</span>)))
+r.<span class="fn">add</span>(<span class="cls">Measurement</span>(<span class="str">"5V Rail"</span>,    <span class="num">5.02</span>, <span class="str">"V"</span>,  condition<span class="op">=</span>(<span class="num">4.9</span>, <span class="num">5.1</span>)))
+r.<span class="fn">add</span>(<span class="cls">Measurement</span>(<span class="str">"Frequency"</span>,  <span class="num">1002</span>, <span class="str">"Hz"</span>, condition<span class="op">=lambda</span> v: v <span class="op">&gt;</span> <span class="num">1000</span>))
+
+r.<span class="fn">generate_html</span>(<span class="str">"report.html"</span>)
+r.<span class="fn">generate_excel</span>(<span class="str">"report.xlsx"</span>)</pre>
+  </div>
+
+  <p>Run it:</p>
+  <div class="install-strip" style="font-size:.82rem"><span class="prompt">$</span> python minimal.py</div>
+
+  <p>You'll get <code>report.html</code> and <code>report.xlsx</code> in the current directory. Open <code>report.html</code> in a browser.</p>
+
+  <div class="callout callout-tip">
+    <strong>No header needed.</strong> If you skip <code>ReportHeader</code>, the report title defaults to
+    <em>"Measurement Report"</em> and the date is filled in automatically.
+  </div>
+
+  <hr />
+
+  <!-- Step 3 -->
+  <h2>3 · Add a report header</h2>
+  <p><code>ReportHeader</code> captures UUT metadata — engineer name, serial number, revision, and any custom fields
+     you need. All fields except <code>title</code> are optional.</p>
+
+  <div class="code-block">
+    <div class="code-block-header"><span>with_header.py</span><button class="copy-btn" onclick="copyCode('c2')">copy</button></div>
+    <pre id="c2"><span class="kw">from</span> instrumation_report <span class="kw">import</span> <span class="cls">Report</span>, <span class="cls">ReportHeader</span>, <span class="cls">Measurement</span>
+
+report <span class="op">=</span> <span class="cls">Report</span>(header<span class="op">=</span><span class="cls">ReportHeader</span>(
+    title<span class="op">=</span><span class="str">"Power Supply Acceptance Test"</span>,
+    subtitle<span class="op">=</span><span class="str">"Final QA — Line 3"</span>,
+    engineer<span class="op">=</span><span class="str">"Abduznik"</span>,
+    uut_name<span class="op">=</span><span class="str">"PSU-500W"</span>,
+    uut_serial<span class="op">=</span><span class="str">"SN-00042"</span>,
+    revision<span class="op">=</span><span class="str">"B"</span>,
+    extra_fields<span class="op">=</span>{<span class="str">"Batch"</span>: <span class="str">"2024-Q4"</span>, <span class="str">"Station"</span>: <span class="str">"TS-01"</span>},
+))
+
+report.<span class="fn">add</span>(<span class="cls">Measurement</span>(<span class="str">"Output Voltage"</span>, <span class="num">12.01</span>, <span class="str">"V"</span>, condition<span class="op">=</span>(<span class="num">11.8</span>, <span class="num">12.2</span>)))
+report.<span class="fn">add</span>(<span class="cls">Measurement</span>(<span class="str">"Ripple"</span>,         <span class="num">18.5</span>,  <span class="str">"mV"</span>, condition<span class="op">=lambda</span> v: v <span class="op">&lt;</span> <span class="num">50</span>))
+report.<span class="fn">add</span>(<span class="cls">Measurement</span>(<span class="str">"Efficiency"</span>,    <span class="num">88.4</span>,  <span class="str">"%"</span>,  condition<span class="op">=</span><span class="num">85.0</span>))
+
+report.<span class="fn">generate_html</span>(<span class="str">"report.html"</span>)</pre>
+  </div>
+
+  <hr />
+
+  <!-- Step 4 -->
+  <h2>4 · Structure with Sections and Tables</h2>
+  <p>For multi-section test plans, nest measurements inside
+     <code>Section → TestTable → Measurement</code>.
+     This maps directly to how numbered test procedures are written.</p>
+
+  <div class="code-block">
+    <div class="code-block-header"><span>structured.py</span><button class="copy-btn" onclick="copyCode('c3')">copy</button></div>
+    <pre id="c3"><span class="kw">from</span> instrumation_report <span class="kw">import</span> <span class="cls">Report</span>, <span class="cls">ReportHeader</span>, <span class="cls">Section</span>, <span class="cls">TestTable</span>, <span class="cls">Measurement</span>
+
+report <span class="op">=</span> <span class="cls">Report</span>(header<span class="op">=</span><span class="cls">ReportHeader</span>(title<span class="op">=</span><span class="str">"RF Module Validation"</span>, engineer<span class="op">=</span><span class="str">"Abduznik"</span>))
+
+<span class="cm"># Section 1 — Power</span>
+s1 <span class="op">=</span> <span class="cls">Section</span>(number<span class="op">=</span><span class="str">"1"</span>, title<span class="op">=</span><span class="str">"Power Supply"</span>)
+t1 <span class="op">=</span> <span class="cls">TestTable</span>(title<span class="op">=</span><span class="str">"Voltage Rails"</span>, sub_number<span class="op">=</span><span class="str">"1.1"</span>)
+t1.<span class="fn">add</span>(<span class="cls">Measurement</span>(<span class="str">"3.3V Rail"</span>, <span class="num">3.31</span>, <span class="str">"V"</span>, condition<span class="op">=</span>(<span class="num">3.2</span>, <span class="num">3.4</span>), test_number<span class="op">=</span><span class="str">"1.1.1"</span>, expected<span class="op">=</span><span class="str">"3.2–3.4V"</span>))
+t1.<span class="fn">add</span>(<span class="cls">Measurement</span>(<span class="str">"5V Rail"</span>,   <span class="num">5.02</span>, <span class="str">"V"</span>, condition<span class="op">=</span>(<span class="num">4.9</span>, <span class="num">5.1</span>), test_number<span class="op">=</span><span class="str">"1.1.2"</span>, expected<span class="op">=</span><span class="str">"4.9–5.1V"</span>))
+s1.<span class="fn">add_table</span>(t1)
+report.<span class="fn">add_section</span>(s1)
+
+<span class="cm"># Section 2 — RF</span>
+s2 <span class="op">=</span> <span class="cls">Section</span>(number<span class="op">=</span><span class="str">"2"</span>, title<span class="op">=</span><span class="str">"RF Performance"</span>)
+t2 <span class="op">=</span> <span class="cls">TestTable</span>(title<span class="op">=</span><span class="str">"Frequency Response"</span>, sub_number<span class="op">=</span><span class="str">"2.1"</span>)
+t2.<span class="fn">add</span>(<span class="cls">Measurement</span>(<span class="str">"Center Freq"</span>, <span class="num">2401.5</span>, <span class="str">"MHz"</span>, condition<span class="op">=</span>(<span class="num">2400</span>, <span class="num">2403</span>), test_number<span class="op">=</span><span class="str">"2.1.1"</span>))
+t2.<span class="fn">add</span>(<span class="cls">Measurement</span>(<span class="str">"Return Loss"</span>,  <span class="num">18.5</span>,   <span class="str">"dB"</span>,  condition<span class="op">=</span><span class="num">15.0</span>,          test_number<span class="op">=</span><span class="str">"2.1.2"</span>))
+s2.<span class="fn">add_table</span>(t2)
+report.<span class="fn">add_section</span>(s2)
+
+report.<span class="fn">generate_html</span>(<span class="str">"report.html"</span>)
+report.<span class="fn">generate_excel</span>(<span class="str">"report.xlsx"</span>)
+report.<span class="fn">generate_pdf</span>(<span class="str">"report.pdf"</span>)  <span class="cm"># requires [pdf] extra</span></pre>
+  </div>
+
+  <hr />
+
+  <!-- Step 5 — conditions -->
+  <h2>5 · Condition types</h2>
+  <p>The <code>condition</code> parameter on a <code>Measurement</code> controls pass/fail evaluation.
+     Three formats are supported:</p>
+
+  <table class="wiki-table">
+    <thead><tr><th>Type</th><th>Example</th><th>Passes when</th></tr></thead>
+    <tbody>
+      <tr><td>Range tuple</td><td><code>condition=(1.0, 5.0)</code></td><td style="color:var(--text)"><code>lo &lt;= value &lt;= hi</code></td></tr>
+      <tr><td>Lambda</td><td><code>condition=lambda v: v &gt; 4.0</code></td><td style="color:var(--text)">callable returns <code>True</code></td></tr>
+      <tr><td>Threshold float</td><td><code>condition=3.0</code></td><td style="color:var(--text)"><code>value &gt;= threshold</code></td></tr>
+      <tr><td>None (omit)</td><td><em>no condition argument</em></td><td style="color:var(--muted)">always N/A — informational only</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-info">
+    <strong>Lambda tip:</strong> use a lambda for anything a tuple can't express — inequalities, compound checks,
+    absolute tolerance, etc. <code>lambda v: abs(v - 5.0) &lt; 0.1</code> is perfectly valid.
+  </div>
+
+  <hr />
+
+  <!-- Step 6 — PDF -->
+  <h2>6 · PDF export</h2>
+  <p>PDF is rendered from the same HTML template via weasyprint.
+     weasyprint needs system-level libraries (Pango, GObject) that aren't bundled with the Python package.</p>
+
+  <div class="code-block">
+    <div class="code-block-header"><span>shell</span></div>
+    <pre><span class="cm"># macOS</span>
+brew install pango
+pip install <span class="str">"instrumation-report[pdf]"</span>
+
+<span class="cm"># Ubuntu / Debian</span>
+apt-get install libpango-1.0-0 libpangoft2-1.0-0
+pip install <span class="str">"instrumation-report[pdf]"</span></pre>
+  </div>
+
+  <div class="callout callout-warn">
+    <strong>weasyprint on Python 3.14</strong> may require the latest weasyprint release.
+    If you see a cffi import error, check the
+    <a href="https://doc.courtbouillon.org/weasyprint/stable/first_steps.html#troubleshooting" target="_blank">weasyprint troubleshooting page</a>.
+  </div>
+
+  <hr />
+
+  <p>Ready to see a full real-world example? <a href="examples.html">Browse the examples →</a></p>
+
+</div>
+
+<footer class="site-footer">
+  instrumation-report · MIT License ·
+  <a href="https://github.com/abduznik/instrumation-report">GitHub</a> ·
+  <a href="https://pypi.org/project/instrumation-report/">PyPI</a>
+</footer>
+
+<script>
+function copyCode(id) {
+  const text = document.getElementById(id).innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    event.target.textContent = "copied!";
+    setTimeout(() => event.target.textContent = "copy", 1500);
+  });
+}
+</script>
+<script>
+(function(){
+  const saved = localStorage.getItem("ir-theme");
+  if (saved === "light") document.documentElement.classList.add("light");
+})();
+function toggleTheme() {
+  const light = document.documentElement.classList.toggle("light");
+  localStorage.setItem("ir-theme", light ? "light" : "dark");
+}
+</script>
+</body>
+</html>

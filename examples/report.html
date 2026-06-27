@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RF Subsystem Validation</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: #f0f2f5;
+      color: #1a1a1a;
+      padding: 2rem;
+      font-size: 14px;
+    }
+
+    .page {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    /* ── Header card ── */
+    .report-header {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+      padding: 1.75rem 2rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .report-header h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #111;
+    }
+
+    .report-header .subtitle {
+      font-size: 1rem;
+      color: #555;
+      margin-top: 0.2rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.6rem 1.5rem;
+    }
+
+    .meta-item { display: flex; flex-direction: column; }
+    .meta-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: #888; font-weight: 600; }
+    .meta-value { font-size: 0.9rem; color: #222; font-weight: 500; }
+
+    /* ── Section ── */
+    .section { margin-bottom: 1.75rem; }
+
+    .section-heading {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #111;
+      margin-bottom: 0.2rem;
+    }
+
+    .section-subtitle {
+      font-size: 0.85rem;
+      color: #666;
+      margin-bottom: 0.9rem;
+    }
+
+    /* ── Table card ── */
+    .table-card {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.07);
+      margin-bottom: 1.2rem;
+      overflow: hidden;
+    }
+
+    .table-card-header {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid #e8e8e8;
+      display: flex;
+      align-items: baseline;
+      gap: 0.6rem;
+    }
+
+    .table-card-number {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #888;
+      letter-spacing: 0.04em;
+    }
+
+    .table-card-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #222;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+
+    th {
+      padding: 0.55rem 1rem;
+      text-align: left;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #666;
+      border-bottom: 1px solid #e8e8e8;
+      background: #fafafa;
+    }
+
+    td {
+      padding: 0.6rem 1rem;
+      border-bottom: 1px solid #f2f2f2;
+      vertical-align: middle;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafbfc; }
+
+    .badge {
+      display: inline-block;
+      padding: 0.18rem 0.6rem;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    .badge-pass { background: #dcfce7; color: #15803d; }
+    .badge-fail { background: #fee2e2; color: #b91c1c; }
+    .badge-na   { background: #f1f5f9; color: #94a3b8; }
+
+    .test-num { font-family: monospace; color: #888; font-size: 0.8rem; }
+    .notes-cell { color: #555; font-style: italic; max-width: 200px; }
+
+    /* ── Summary ── */
+    .summary-card {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+      padding: 1.25rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .summary-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #888;
+      flex: 0 0 100%;
+      margin-bottom: 0.25rem;
+    }
+
+    .summary-stat { display: flex; flex-direction: column; align-items: center; }
+    .summary-num { font-size: 2rem; font-weight: 700; line-height: 1; }
+    .summary-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: #888; margin-top: 0.2rem; }
+
+    .num-total  { color: #374151; }
+    .num-pass   { color: #15803d; }
+    .num-fail   { color: #b91c1c; }
+    .num-rate   { color: #1d4ed8; }
+
+    .divider { width: 1px; height: 48px; background: #e5e7eb; }
+
+    /* ── Print / PDF ────────────────────────────────────────────────────── */
+    @media print {
+      body {
+        background: #fff;
+        padding: 0;
+        font-size: 11px;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .page { max-width: 100%; }
+
+      /* Cards become flat bordered boxes — no shadows, no rounded corners */
+      .report-header,
+      .table-card,
+      .summary-card {
+        box-shadow: none;
+        border-radius: 0;
+        border: 1px solid #d1d5db;
+      }
+
+      /* Header stays on its own page slice — never orphaned */
+      .report-header {
+        break-after: avoid;
+        page-break-after: avoid;
+      }
+
+      /* Each section starts on a new page if it doesn't fit */
+      .section {
+        break-inside: avoid-page;
+        page-break-inside: auto;
+      }
+
+      /* Section heading + its first table always stay together */
+      .section-heading,
+      .section-subtitle {
+        break-after: avoid;
+        page-break-after: avoid;
+      }
+
+      /* Table cards never split mid-card if they're short enough;
+         for long tables, rows can break but the header row repeats */
+      .table-card {
+        break-inside: auto;
+        page-break-inside: auto;
+        margin-bottom: 0.6rem;
+      }
+
+      /* Table card header (sub_number + title) stays with the first data row */
+      .table-card-header {
+        break-after: avoid;
+        page-break-after: avoid;
+      }
+
+      /* Repeat column headers on every page for long tables */
+      thead { display: table-header-group; }
+      tfoot { display: table-footer-group; }
+
+      /* No row orphans/widows — a row that starts a page carries at least 2 rows */
+      tr {
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+
+      /* Summary always starts on a fresh line and never splits */
+      .summary-card {
+        break-before: auto;
+        page-break-before: auto;
+        break-inside: avoid;
+        page-page-inside: avoid;
+        margin-top: 1rem;
+      }
+
+      /* Suppress interactive chrome artifacts */
+      tr:hover td { background: transparent; }
+    }
+
+    @page {
+      size: A4;
+      margin: 18mm 15mm 20mm 15mm;
+
+      @bottom-center {
+        content: counter(page) " / " counter(pages);
+        font-family: system-ui, sans-serif;
+        font-size: 9px;
+        color: #9ca3af;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Header -->
+  <div class="report-header">
+    <h1>RF Subsystem Validation</h1>
+    <p class="subtitle">Production Test — Board Rev A</p>
+    <div class="meta-grid">
+      
+      <div class="meta-item">
+        <span class="meta-label">Engineer</span>
+        <span class="meta-value">Abduznik</span>
+      </div>
+      
+      
+      <div class="meta-item">
+        <span class="meta-label">UUT</span>
+        <span class="meta-value">Signal Analyzer Module</span>
+      </div>
+      
+      
+      <div class="meta-item">
+        <span class="meta-label">Serial</span>
+        <span class="meta-value">SN-2024-001</span>
+      </div>
+      
+      
+      <div class="meta-item">
+        <span class="meta-label">Revision</span>
+        <span class="meta-value">A</span>
+      </div>
+      
+      <div class="meta-item">
+        <span class="meta-label">Date</span>
+        <span class="meta-value">2026-06-27</span>
+      </div>
+      
+      <div class="meta-item">
+        <span class="meta-label">Batch</span>
+        <span class="meta-value">LOT-88B</span>
+      </div>
+      
+      <div class="meta-item">
+        <span class="meta-label">Test Station</span>
+        <span class="meta-value">TS-02</span>
+      </div>
+      
+    </div>
+  </div>
+
+  <!-- Sections -->
+  
+  <div class="section">
+    <div class="section-heading">1. Power Supply Checks</div>
+    <div class="section-subtitle">DC rail validation at nominal load</div>
+
+    
+    <div class="table-card">
+      <div class="table-card-header">
+        <span class="table-card-number">1.1</span>
+        <span class="table-card-title">Voltage Rails</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Test No.</th>
+            <th>Name</th>
+            <th>Value</th>
+            <th>Unit</th>
+            <th>Expected</th>
+            <th>Pass / Fail</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          
+          <tr>
+            <td class="test-num">1.1.1</td>
+            <td>3.3V Rail</td>
+            <td><strong>3.31</strong></td>
+            <td>V</td>
+            <td>3.2 – 3.4 V</td>
+            <td>
+              
+                <span class="badge badge-pass">PASS</span>
+              
+            </td>
+            <td class="notes-cell">Nominal</td>
+          </tr>
+          
+          <tr>
+            <td class="test-num">1.1.2</td>
+            <td>5V Rail</td>
+            <td><strong>5.02</strong></td>
+            <td>V</td>
+            <td>4.9 – 5.1 V</td>
+            <td>
+              
+                <span class="badge badge-pass">PASS</span>
+              
+            </td>
+            <td class="notes-cell"></td>
+          </tr>
+          
+          <tr>
+            <td class="test-num">1.1.3</td>
+            <td>12V Rail</td>
+            <td><strong>11.0</strong></td>
+            <td>V</td>
+            <td>11.5 – 12.5 V</td>
+            <td>
+              
+                <span class="badge badge-fail">FAIL</span>
+              
+            </td>
+            <td class="notes-cell">Under spec — check regulator</td>
+          </tr>
+          
+          <tr>
+            <td class="test-num">1.1.4</td>
+            <td>-5V Rail</td>
+            <td><strong>-4.98</strong></td>
+            <td>V</td>
+            <td>-5.1 – -4.9 V</td>
+            <td>
+              
+                <span class="badge badge-pass">PASS</span>
+              
+            </td>
+            <td class="notes-cell"></td>
+          </tr>
+          
+        </tbody>
+      </table>
+    </div>
+    
+    <div class="table-card">
+      <div class="table-card-header">
+        <span class="table-card-number">1.2</span>
+        <span class="table-card-title">Current Draw</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Test No.</th>
+            <th>Name</th>
+            <th>Value</th>
+            <th>Unit</th>
+            <th>Expected</th>
+            <th>Pass / Fail</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          
+          <tr>
+            <td class="test-num">1.2.1</td>
+            <td>3.3V Current</td>
+            <td><strong>0.42</strong></td>
+            <td>A</td>
+            <td>< 0.6 A</td>
+            <td>
+              
+                <span class="badge badge-pass">PASS</span>
+              
+            </td>
+            <td class="notes-cell"></td>
+          </tr>
+          
+          <tr>
+            <td class="test-num">1.2.2</td>
+            <td>5V Current</td>
+            <td><strong>0.88</strong></td>
+            <td>A</td>
+            <td>< 1.0 A</td>
+            <td>
+              
+                <span class="badge badge-pass">PASS</span>
+              
+            </td>
+            <td class="notes-cell"></td>
+          </tr>
+          
+          <tr>
+            <td class="test-num">1.2.3</td>
+            <td>12V Current</td>
+            <td><strong>1.35</strong></td>
+            <td>A</td>
+            <td>< 1.2 A</td>
+            <td>
+              
+                <span class="badge badge-fail">FAIL</span>
+              
+            </td>
+            <td class="notes-cell">Exceeds limit</td>
+          </tr>
+          
+        </tbody>
+      </table>
+    </div>
+    
+  </div>
+  
+  <div class="section">
+    <div class="section-heading">2. RF Performance</div>
+    <div class="section-subtitle">Measured at 25 °C ambient, 50 Ω termination</div>
+
+    
+    <div class="table-card">
+      <div class="table-card-header">
+        <span class="table-card-number">2.1</span>
+        <span class="table-card-title">Frequency Response</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Test No.</th>
+            <th>Name</th>
+            <th>Value</th>
+            <th>Unit</th>
+            <th>Expected</th>
+            <th>Pass / Fail</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          
+          <tr>
+            <td class="test-num">2.1.1</td>
+            <td>Center Frequency</td>
+            <td><strong>2401.5</strong></td>
+            <td>MHz</td>
+            <td>2400 – 2403 MHz</td>
+            <td>
+              
+                <span class="badge badge-pass">PASS</span>
+              
+            </td>
+            <td class="notes-cell"></td>
+          </tr>
+          
+          <tr>
+            <td class="test-num">2.1.2</td>
+            <td>Bandwidth (-3dB)</td>
+            <td><strong>82.4</strong></td>
+            <td>MHz</td>
+            <td>80 – 90 MHz</td>
+            <td>
+              
+                <span class="badge badge-pass">PASS</span>
+              
+            </td>
+            <td class="notes-cell"></td>
+          </tr>
+          
+          <tr>
+            <td class="test-num">2.1.3</td>
+            <td>Insertion Loss</td>
+            <td><strong>2.1</strong></td>
+            <td>dB</td>
+            <td>< 3 dB</td>
+            <td>
+              
+                <span class="badge badge-pass">PASS</span>
+              
+            </td>
+            <td class="notes-cell"></td>
+          </tr>
+          
+          <tr>
+            <td class="test-num">2.1.4</td>
+            <td>Return Loss</td>
+            <td><strong>18.5</strong></td>
+            <td>dB</td>
+            <td>>= 15 dB</td>
+            <td>
+              
+                <span class="badge badge-pass">PASS</span>
+              
+            </td>
+            <td class="notes-cell"></td>
+          </tr>
+          
+        </tbody>
+      </table>
+    </div>
+    
+    <div class="table-card">
+      <div class="table-card-header">
+        <span class="table-card-number">2.2</span>
+        <span class="table-card-title">Noise & Spurious</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Test No.</th>
+            <th>Name</th>
+            <th>Value</th>
+            <th>Unit</th>
+            <th>Expected</th>
+            <th>Pass / Fail</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          
+          <tr>
+            <td class="test-num">2.2.1</td>
+            <td>Noise Figure</td>
+            <td><strong>3.8</strong></td>
+            <td>dB</td>
+            <td>< 5 dB</td>
+            <td>
+              
+                <span class="badge badge-pass">PASS</span>
+              
+            </td>
+            <td class="notes-cell"></td>
+          </tr>
+          
+          <tr>
+            <td class="test-num">2.2.2</td>
+            <td>Phase Noise @1 kHz</td>
+            <td><strong>-88</strong></td>
+            <td>dBc/Hz</td>
+            <td>< -85 dBc/Hz</td>
+            <td>
+              
+                <span class="badge badge-pass">PASS</span>
+              
+            </td>
+            <td class="notes-cell"></td>
+          </tr>
+          
+          <tr>
+            <td class="test-num">2.2.3</td>
+            <td>Spurious Level</td>
+            <td><strong>-62</strong></td>
+            <td>dBc</td>
+            <td>< -60 dBc</td>
+            <td>
+              
+                <span class="badge badge-pass">PASS</span>
+              
+            </td>
+            <td class="notes-cell"></td>
+          </tr>
+          
+          <tr>
+            <td class="test-num">2.2.4</td>
+            <td>Harmonic 2nd</td>
+            <td><strong>-45</strong></td>
+            <td>dBc</td>
+            <td>< -40 dBc</td>
+            <td>
+              
+                <span class="badge badge-pass">PASS</span>
+              
+            </td>
+            <td class="notes-cell">Marginal</td>
+          </tr>
+          
+        </tbody>
+      </table>
+    </div>
+    
+  </div>
+  
+  <div class="section">
+    <div class="section-heading">3. Environmental</div>
+    <div class="section-subtitle">Recorded during test — informational only</div>
+
+    
+    <div class="table-card">
+      <div class="table-card-header">
+        <span class="table-card-number">3.1</span>
+        <span class="table-card-title">Ambient Conditions</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Test No.</th>
+            <th>Name</th>
+            <th>Value</th>
+            <th>Unit</th>
+            <th>Expected</th>
+            <th>Pass / Fail</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          
+          <tr>
+            <td class="test-num"></td>
+            <td>Temperature</td>
+            <td><strong>24.3</strong></td>
+            <td>°C</td>
+            <td></td>
+            <td>
+              
+                <span class="badge badge-na">N/A</span>
+              
+            </td>
+            <td class="notes-cell"></td>
+          </tr>
+          
+          <tr>
+            <td class="test-num"></td>
+            <td>Humidity</td>
+            <td><strong>41.0</strong></td>
+            <td>%RH</td>
+            <td></td>
+            <td>
+              
+                <span class="badge badge-na">N/A</span>
+              
+            </td>
+            <td class="notes-cell"></td>
+          </tr>
+          
+          <tr>
+            <td class="test-num">3.1.3</td>
+            <td>Supply Temp</td>
+            <td><strong>38.5</strong></td>
+            <td>°C</td>
+            <td>< 50 °C</td>
+            <td>
+              
+                <span class="badge badge-pass">PASS</span>
+              
+            </td>
+            <td class="notes-cell">PSU heatsink</td>
+          </tr>
+          
+        </tbody>
+      </table>
+    </div>
+    
+  </div>
+  
+
+  <!-- Summary -->
+  <div class="summary-card">
+    <span class="summary-title">Summary</span>
+    <div class="summary-stat">
+      <span class="summary-num num-total">18</span>
+      <span class="summary-label">Total</span>
+    </div>
+    <div class="divider"></div>
+    <div class="summary-stat">
+      <span class="summary-num num-pass">14</span>
+      <span class="summary-label">Passed</span>
+    </div>
+    <div class="summary-stat">
+      <span class="summary-num num-fail">2</span>
+      <span class="summary-label">Failed</span>
+    </div>
+    <div class="divider"></div>
+    <div class="summary-stat">
+      <span class="summary-num num-rate">77.8%</span>
+      <span class="summary-label">Pass Rate</span>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Try It — instrumation-report</title>
+  <link rel="stylesheet" href="assets/style.css" />
+  <style>
+    .pg-wrap { max-width: 1000px; margin: 0 auto; padding: 2.5rem 2rem 5rem; }
+    .pg-header { margin-bottom: 1.5rem; }
+    .pg-header h1 { font-size: 1.6rem; font-weight: 800; letter-spacing: -.03em; margin-bottom: .4rem; }
+    .pg-header p  { color: var(--muted); font-size: .9rem; }
+
+    .pg-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      align-items: start;
+    }
+    @media (max-width: 740px) { .pg-layout { grid-template-columns: 1fr; } }
+
+    .pg-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    .pg-panel-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: .5rem 1rem; border-bottom: 1px solid var(--border);
+      background: var(--code-bg); font-size: .75rem; color: var(--muted);
+    }
+    .pg-panel-header strong { color: var(--text); }
+
+    #pg-editor {
+      width: 100%; height: 440px;
+      background: var(--code-bg); color: #c3e88d;
+      font-family: "SF Mono","Fira Code","Cascadia Code",monospace;
+      font-size: .78rem; line-height: 1.7;
+      border: none; outline: none;
+      padding: 1rem; resize: none; tab-size: 4; display: block;
+    }
+
+    .pg-toolbar {
+      display: flex; align-items: center; gap: .6rem;
+      padding: .6rem 1rem; border-top: 1px solid var(--border);
+      background: var(--surface2);
+    }
+    #pg-status { font-size: .72rem; color: var(--muted); margin-left: auto; }
+    #pg-status.ok   { color: var(--pass); }
+    #pg-status.err  { color: var(--fail); }
+    #pg-status.busy { color: var(--warn); }
+
+    .output-panel { position: sticky; top: calc(var(--nav-h) + 1rem); }
+    #pg-output-iframe { width: 100%; height: 480px; border: none; display: none; background: #fff; }
+    .output-empty {
+      height: 480px; display: flex; align-items: center; justify-content: center;
+      color: var(--muted); font-size: .85rem; flex-direction: column; gap: .5rem;
+    }
+    .output-empty .icon { font-size: 2.5rem; }
+
+    .presets { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+    .preset-chip {
+      padding: .25rem .75rem; border: 1px solid var(--border); border-radius: 999px;
+      font-size: .75rem; color: var(--muted); cursor: pointer; background: none;
+      transition: color .15s, border-color .15s, background .15s;
+    }
+    .preset-chip:hover, .preset-chip.active {
+      color: var(--text); border-color: var(--accent); background: rgba(79,142,247,.08);
+    }
+
+    /* Loading overlay */
+    #pg-loading {
+      position: fixed; inset: 0;
+      background: rgba(15,17,23,.88);
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column; gap: 1rem; z-index: 200;
+      font-size: .9rem; color: var(--muted);
+    }
+    #pg-loading.hidden { display: none; }
+    .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid var(--border); border-top-color: var(--accent);
+      border-radius: 50%; animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .hint { font-size: .72rem; color: var(--muted); margin-top: .3rem; }
+  </style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <a class="nav-brand" href="index.html"><span>instrumation</span>-report</a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="get-started.html">Get Started</a>
+    <a href="examples.html">Examples</a>
+    <a href="api.html">API</a>
+    <a href="try.html" class="active">Try It</a>
+    <a href="https://github.com/abduznik/instrumation-report" class="nav-gh">GitHub ↗</a>
+    <button class="theme-btn" onclick="toggleTheme()" title="Toggle theme">
+      <span class="icon-sun">☀︎</span>
+      <span class="icon-moon">◑</span>
+    </button>
+  </div>
+</nav>
+
+<div id="pg-loading">
+  <div class="spinner"></div>
+  <span>Loading Python runtime…</span>
+  <span style="font-size:.75rem;color:var(--muted)">First load ~5 s · Pyodide + jinja2 + openpyxl</span>
+</div>
+
+<div class="pg-wrap">
+  <div class="pg-header">
+    <div class="badge-row"><span class="badge badge-green">Live</span><span class="badge badge-blue">Pyodide</span></div>
+    <h1>Try It — live playground</h1>
+    <p>Edit Python below and click <strong>Run</strong> (or <kbd>Ctrl+Enter</kbd>) to see the rendered report.
+       Runs entirely in your browser — no server, no install.</p>
+  </div>
+
+  <div class="presets">
+    <button class="preset-chip active" onclick="loadPreset('minimal',this)">Barebones</button>
+    <button class="preset-chip" onclick="loadPreset('header',this)">With Header</button>
+    <button class="preset-chip" onclick="loadPreset('structured',this)">Structured</button>
+    <button class="preset-chip" onclick="loadPreset('conditions',this)">Conditions</button>
+    <button class="preset-chip" onclick="loadPreset('loop',this)">Loop over data</button>
+  </div>
+
+  <div class="pg-layout">
+    <!-- Editor -->
+    <div class="pg-panel">
+      <div class="pg-panel-header">
+        <strong>Code</strong>
+        <span>instrumation_report pre-loaded</span>
+      </div>
+      <textarea id="pg-editor" spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
+      <div class="pg-toolbar">
+        <button class="btn btn-primary" onclick="runCode()" id="run-btn">▶ Run</button>
+        <button class="btn btn-ghost" onclick="clearOutput()" style="font-size:.8rem;padding:.4rem .9rem">Clear</button>
+        <span id="pg-status"></span>
+      </div>
+    </div>
+
+    <!-- Output -->
+    <div class="pg-panel output-panel">
+      <div class="pg-panel-header">
+        <strong>Output</strong>
+        <span>HTML report preview</span>
+      </div>
+      <div id="pg-empty" class="output-empty">
+        <span class="icon">📋</span>
+        <span>Run your code to see the report</span>
+        <span class="hint">generate_html() output is captured and rendered here</span>
+      </div>
+      <iframe id="pg-output-iframe"></iframe>
+    </div>
+  </div>
+</div>
+
+<footer class="site-footer">
+  instrumation-report · MIT License ·
+  <a href="https://github.com/abduznik/instrumation-report">GitHub</a> ·
+  <a href="https://pypi.org/project/instrumation-report/">PyPI</a>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
+<script>
+// ── Library source — embedded at build time ───────────────────────────────
+const LIB_FILES = {"instrumation_report/__init__.py": "from .measurement import Measurement\nfrom .report import Report, ReportHeader\nfrom .section import Section, TestTable\n\n__all__ = [\"Measurement\", \"Report\", \"ReportHeader\", \"Section\", \"TestTable\"]\n__version__ = \"0.0.1\"\n", "instrumation_report/measurement.py": "from __future__ import annotations\n\nfrom dataclasses import dataclass, field\nfrom typing import Callable, Optional, Union\n\nCondition = Union[Callable[[float], bool], tuple[float, float], float, None]\n\n\n@dataclass\nclass Measurement:\n    name: str\n    value: float\n    unit: str = \"\"\n    condition: Condition = None\n    test_number: str = \"\"\n    expected: str = \"\"\n    notes: str = \"\"\n    description: str = \"\"\n\n    def evaluate(self) -> Optional[bool]:\n        if self.condition is None:\n            return None\n        if callable(self.condition):\n            return bool(self.condition(self.value))\n        if isinstance(self.condition, tuple):\n            lo, hi = self.condition\n            return lo <= self.value <= hi\n        if isinstance(self.condition, (int, float)):\n            return self.value >= float(self.condition)\n        raise TypeError(f\"Unsupported condition type: {type(self.condition)}\")\n\n    @property\n    def status(self) -> str:\n        r = self.evaluate()\n        if r is True:\n            return \"PASS\"\n        if r is False:\n            return \"FAIL\"\n        return \"N/A\"\n", "instrumation_report/section.py": "from __future__ import annotations\n\nfrom dataclasses import dataclass, field\nfrom typing import List\n\nfrom .measurement import Measurement\n\n\n@dataclass\nclass TestTable:\n    title: str\n    sub_number: str\n    measurements: List[Measurement] = field(default_factory=list)\n\n    def add(self, measurement: Measurement) -> None:\n        self.measurements.append(measurement)\n\n\n@dataclass\nclass Section:\n    number: str\n    title: str\n    subtitle: str = \"\"\n    tables: List[TestTable] = field(default_factory=list)\n\n    def add_table(self, table: TestTable) -> None:\n        self.tables.append(table)\n", "instrumation_report/report.py": "from __future__ import annotations\n\nimport datetime\nimport importlib.resources\nfrom dataclasses import dataclass, field\nfrom pathlib import Path\nfrom typing import List, Optional\n\nfrom jinja2 import BaseLoader, Environment\nfrom openpyxl import Workbook\nfrom openpyxl.styles import Alignment, Font, PatternFill\nfrom openpyxl.utils import get_column_letter\n\nfrom .measurement import Measurement\nfrom .section import Section, TestTable\n\n\n@dataclass\nclass ReportHeader:\n    title: str\n    subtitle: str = \"\"\n    engineer: str = \"\"\n    uut_name: str = \"\"\n    uut_serial: str = \"\"\n    revision: str = \"\"\n    date: str = field(default_factory=lambda: datetime.date.today().isoformat())\n    extra_fields: dict = field(default_factory=dict)\n\n\n@dataclass\nclass _Summary:\n    total: int\n    passed: int\n    failed: int\n    pass_rate: str\n\n\nclass Report:\n    def __init__(self, header: Optional[ReportHeader] = None) -> None:\n        self.header = header or ReportHeader(title=\"Measurement Report\")\n        self._sections: List[Section] = []\n        self._flat: List[Measurement] = []\n\n    def add_section(self, section: Section) -> None:\n        self._sections.append(section)\n\n    def add(self, measurement: Measurement) -> None:\n        \"\"\"Flat backwards-compatible usage — wraps into a default section/table.\"\"\"\n        self._flat.append(measurement)\n\n    def _all_measurements(self) -> List[Measurement]:\n        out: List[Measurement] = []\n        for s in self._sections:\n            for t in s.tables:\n                out.extend(t.measurements)\n        out.extend(self._flat)\n        return out\n\n    def _build_summary(self) -> _Summary:\n        all_m = self._all_measurements()\n        passed = sum(1 for m in all_m if m.status == \"PASS\")\n        failed = sum(1 for m in all_m if m.status == \"FAIL\")\n        total = len(all_m)\n        rate = f\"{passed / total * 100:.1f}\" if total else \"0.0\"\n        return _Summary(total=total, passed=passed, failed=failed, pass_rate=rate)\n\n    def _sections_for_render(self) -> List[Section]:\n        \"\"\"Merge flat measurements into a synthetic section so the template is uniform.\"\"\"\n        sections = list(self._sections)\n        if self._flat:\n            s = Section(number=\"\", title=\"Measurements\")\n            t = TestTable(title=\"\", sub_number=\"\")\n            for m in self._flat:\n                t.add(m)\n            s.add_table(t)\n            sections.append(s)\n        return sections\n\n    def _load_template(self) -> str:\n        try:\n            ref = importlib.resources.files(\"instrumation_report.templates\").joinpath(\"base.html\")\n            return ref.read_text(encoding=\"utf-8\")\n        except Exception:\n            return (Path(__file__).parent / \"templates\" / \"base.html\").read_text(encoding=\"utf-8\")\n\n    # ── HTML ──────────────────────────────────────────────────────────────────\n\n    def generate_html(self, output_path: str) -> None:\n        env = Environment(loader=BaseLoader())\n        tmpl = env.from_string(self._load_template())\n        html = tmpl.render(\n            header=self.header,\n            sections=self._sections_for_render(),\n            summary=self._build_summary(),\n        )\n        Path(output_path).write_text(html, encoding=\"utf-8\")\n\n    # ── Excel ─────────────────────────────────────────────────────────────────\n\n    def generate_excel(self, output_path: str) -> None:\n        wb = Workbook()\n        ws = wb.active\n        ws.title = \"Report\"\n\n        COLS = 7\n        COL_LETTERS = [get_column_letter(i) for i in range(1, COLS + 1)]\n\n        # Fills / fonts\n        fill_pass    = PatternFill(\"solid\", fgColor=\"C6EFCE\")\n        fill_fail    = PatternFill(\"solid\", fgColor=\"FFC7CE\")\n        fill_header  = PatternFill(\"solid\", fgColor=\"1F2937\")\n        fill_section = PatternFill(\"solid\", fgColor=\"E5E7EB\")\n        fill_table   = PatternFill(\"solid\", fgColor=\"F9FAFB\")\n        fill_col_hdr = PatternFill(\"solid\", fgColor=\"F3F4F6\")\n\n        font_white   = Font(bold=True, color=\"FFFFFF\", size=11)\n        font_section = Font(bold=True, size=11, color=\"111111\")\n        font_table   = Font(bold=True, size=10, color=\"374151\")\n        font_col_hdr = Font(bold=True, size=9, color=\"6B7280\")\n        font_bold    = Font(bold=True)\n        font_pass    = Font(color=\"276221\", bold=True)\n        font_fail    = Font(color=\"9B1C1C\", bold=True)\n\n        def merge_row(text: str, fill: PatternFill, font: Font, height: float = 18) -> None:\n            row = ws.max_row + 1\n            ws.append([\"\"] * COLS)\n            ws.merge_cells(f\"A{row}:{COL_LETTERS[-1]}{row}\")\n            cell = ws.cell(row, 1)\n            cell.value = text\n            cell.fill = fill\n            cell.font = font\n            cell.alignment = Alignment(vertical=\"center\", indent=1)\n            ws.row_dimensions[row].height = height\n\n        def append_col_headers() -> None:\n            headers = [\"Test No.\", \"Name\", \"Value\", \"Unit\", \"Expected\", \"Pass / Fail\", \"Notes\"]\n            ws.append(headers)\n            r = ws.max_row\n            for c, h in enumerate(headers, 1):\n                cell = ws.cell(r, c)\n                cell.fill = fill_col_hdr\n                cell.font = font_col_hdr\n                cell.alignment = Alignment(vertical=\"center\")\n            ws.row_dimensions[r].height = 16\n\n        # ── Report header block ──\n        merge_row(self.header.title, fill_header, font_white, height=28)\n        if self.header.subtitle:\n            merge_row(self.header.subtitle, fill_header, Font(color=\"D1D5DB\", size=10), height=18)\n\n        meta_pairs = [\n            (\"Engineer\", self.header.engineer),\n            (\"UUT\", self.header.uut_name),\n            (\"Serial\", self.header.uut_serial),\n            (\"Revision\", self.header.revision),\n            (\"Date\", self.header.date),\n        ] + list(self.header.extra_fields.items())\n\n        for label, val in meta_pairs:\n            if val:\n                ws.append([label, val] + [\"\"] * (COLS - 2))\n                r = ws.max_row\n                ws.cell(r, 1).font = Font(bold=True, color=\"6B7280\", size=9)\n                ws.cell(r, 2).font = Font(size=9)\n\n        ws.append([\"\"] * COLS)  # spacer\n\n        # ── Sections ──\n        for section in self._sections_for_render():\n            if section.number or section.title:\n                heading = f\"{section.number}. {section.title}\".strip(\". \")\n                merge_row(heading, fill_section, font_section, height=20)\n                if section.subtitle:\n                    merge_row(section.subtitle, fill_section, Font(italic=True, size=9, color=\"555555\"), height=14)\n\n            for table in section.tables:\n                if table.sub_number or table.title:\n                    sub_heading = f\"{table.sub_number}  {table.title}\".strip()\n                    merge_row(sub_heading, fill_table, font_table, height=16)\n\n                append_col_headers()\n\n                for m in table.measurements:\n                    ws.append([\n                        m.test_number,\n                        m.name,\n                        m.value,\n                        m.unit,\n                        m.expected,\n                        m.status,\n                        m.notes,\n                    ])\n                    r = ws.max_row\n                    ws.row_dimensions[r].height = 16\n                    status = m.status\n                    if status == \"PASS\":\n                        for c in range(1, COLS + 1):\n                            ws.cell(r, c).fill = fill_pass\n                        ws.cell(r, 6).font = font_pass\n                    elif status == \"FAIL\":\n                        for c in range(1, COLS + 1):\n                            ws.cell(r, c).fill = fill_fail\n                        ws.cell(r, 6).font = font_fail\n\n                ws.append([\"\"] * COLS)  # spacer between tables\n\n        # ── Summary ──\n        summary = self._build_summary()\n        ws.append([\"\"] * COLS)\n        merge_row(\"Summary\", fill_header, font_white, height=20)\n        for label, val in [\n            (\"Total\", summary.total),\n            (\"Passed\", summary.passed),\n            (\"Failed\", summary.failed),\n            (\"Pass Rate\", f\"{summary.pass_rate}%\"),\n        ]:\n            ws.append([label, val] + [\"\"] * (COLS - 2))\n            r = ws.max_row\n            ws.cell(r, 1).font = Font(bold=True, size=9, color=\"6B7280\")\n            ws.cell(r, 2).font = font_bold\n\n        # Column widths\n        widths = [12, 28, 10, 8, 18, 12, 30]\n        for i, w in enumerate(widths, 1):\n            ws.column_dimensions[get_column_letter(i)].width = w\n\n        wb.save(output_path)\n\n    # ── PDF ───────────────────────────────────────────────────────────────────\n\n    def generate_pdf(self, output_path: str) -> None:\n        try:\n            from weasyprint import HTML\n        except ImportError as e:\n            raise ImportError(\"weasyprint is required for PDF output: pip install weasyprint\") from e\n\n        env = Environment(loader=BaseLoader())\n        tmpl = env.from_string(self._load_template())\n        html = tmpl.render(\n            header=self.header,\n            sections=self._sections_for_render(),\n            summary=self._build_summary(),\n        )\n        HTML(string=html).write_pdf(output_path)\n", "instrumation_report/templates/base.html": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\" />\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n  <title>{{ header.title }}</title>\n  <style>\n    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }\n\n    body {\n      font-family: system-ui, -apple-system, \"Segoe UI\", sans-serif;\n      background: #f0f2f5;\n      color: #1a1a1a;\n      padding: 2rem;\n      font-size: 14px;\n    }\n\n    .page {\n      max-width: 1000px;\n      margin: 0 auto;\n    }\n\n    /* ── Header card ── */\n    .report-header {\n      background: #fff;\n      border-radius: 10px;\n      box-shadow: 0 1px 4px rgba(0,0,0,.08);\n      padding: 1.75rem 2rem;\n      margin-bottom: 1.5rem;\n    }\n\n    .report-header h1 {\n      font-size: 1.6rem;\n      font-weight: 700;\n      color: #111;\n    }\n\n    .report-header .subtitle {\n      font-size: 1rem;\n      color: #555;\n      margin-top: 0.2rem;\n      margin-bottom: 1.2rem;\n    }\n\n    .meta-grid {\n      display: grid;\n      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));\n      gap: 0.6rem 1.5rem;\n    }\n\n    .meta-item { display: flex; flex-direction: column; }\n    .meta-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: #888; font-weight: 600; }\n    .meta-value { font-size: 0.9rem; color: #222; font-weight: 500; }\n\n    /* ── Section ── */\n    .section { margin-bottom: 1.75rem; }\n\n    .section-heading {\n      font-size: 1.05rem;\n      font-weight: 700;\n      color: #111;\n      margin-bottom: 0.2rem;\n    }\n\n    .section-subtitle {\n      font-size: 0.85rem;\n      color: #666;\n      margin-bottom: 0.9rem;\n    }\n\n    /* ── Table card ── */\n    .table-card {\n      background: #fff;\n      border-radius: 8px;\n      box-shadow: 0 1px 3px rgba(0,0,0,.07);\n      margin-bottom: 1.2rem;\n      overflow: hidden;\n    }\n\n    .table-card-header {\n      padding: 0.75rem 1rem;\n      border-bottom: 1px solid #e8e8e8;\n      display: flex;\n      align-items: baseline;\n      gap: 0.6rem;\n    }\n\n    .table-card-number {\n      font-size: 0.75rem;\n      font-weight: 600;\n      color: #888;\n      letter-spacing: 0.04em;\n    }\n\n    .table-card-title {\n      font-size: 0.95rem;\n      font-weight: 600;\n      color: #222;\n    }\n\n    table {\n      width: 100%;\n      border-collapse: collapse;\n      font-size: 0.85rem;\n    }\n\n    th {\n      padding: 0.55rem 1rem;\n      text-align: left;\n      font-size: 0.72rem;\n      font-weight: 700;\n      text-transform: uppercase;\n      letter-spacing: 0.06em;\n      color: #666;\n      border-bottom: 1px solid #e8e8e8;\n      background: #fafafa;\n    }\n\n    td {\n      padding: 0.6rem 1rem;\n      border-bottom: 1px solid #f2f2f2;\n      vertical-align: middle;\n    }\n\n    tr:last-child td { border-bottom: none; }\n    tr:hover td { background: #fafbfc; }\n\n    .badge {\n      display: inline-block;\n      padding: 0.18rem 0.6rem;\n      border-radius: 999px;\n      font-size: 0.72rem;\n      font-weight: 700;\n      letter-spacing: 0.04em;\n    }\n\n    .badge-pass { background: #dcfce7; color: #15803d; }\n    .badge-fail { background: #fee2e2; color: #b91c1c; }\n    .badge-na   { background: #f1f5f9; color: #94a3b8; }\n\n    .test-num { font-family: monospace; color: #888; font-size: 0.8rem; }\n    .notes-cell { color: #555; font-style: italic; max-width: 200px; }\n\n    /* ── Summary ── */\n    .summary-card {\n      background: #fff;\n      border-radius: 10px;\n      box-shadow: 0 1px 4px rgba(0,0,0,.08);\n      padding: 1.25rem 2rem;\n      display: flex;\n      align-items: center;\n      gap: 2rem;\n      flex-wrap: wrap;\n    }\n\n    .summary-title {\n      font-size: 0.85rem;\n      font-weight: 700;\n      text-transform: uppercase;\n      letter-spacing: 0.06em;\n      color: #888;\n      flex: 0 0 100%;\n      margin-bottom: 0.25rem;\n    }\n\n    .summary-stat { display: flex; flex-direction: column; align-items: center; }\n    .summary-num { font-size: 2rem; font-weight: 700; line-height: 1; }\n    .summary-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: #888; margin-top: 0.2rem; }\n\n    .num-total  { color: #374151; }\n    .num-pass   { color: #15803d; }\n    .num-fail   { color: #b91c1c; }\n    .num-rate   { color: #1d4ed8; }\n\n    .divider { width: 1px; height: 48px; background: #e5e7eb; }\n\n    /* ── Print / PDF ────────────────────────────────────────────────────── */\n    @media print {\n      body {\n        background: #fff;\n        padding: 0;\n        font-size: 11px;\n        -webkit-print-color-adjust: exact;\n        print-color-adjust: exact;\n      }\n\n      .page { max-width: 100%; }\n\n      /* Cards become flat bordered boxes — no shadows, no rounded corners */\n      .report-header,\n      .table-card,\n      .summary-card {\n        box-shadow: none;\n        border-radius: 0;\n        border: 1px solid #d1d5db;\n      }\n\n      /* Header stays on its own page slice — never orphaned */\n      .report-header {\n        break-after: avoid;\n        page-break-after: avoid;\n      }\n\n      /* Each section starts on a new page if it doesn't fit */\n      .section {\n        break-inside: avoid-page;\n        page-break-inside: auto;\n      }\n\n      /* Section heading + its first table always stay together */\n      .section-heading,\n      .section-subtitle {\n        break-after: avoid;\n        page-break-after: avoid;\n      }\n\n      /* Table cards never split mid-card if they're short enough;\n         for long tables, rows can break but the header row repeats */\n      .table-card {\n        break-inside: auto;\n        page-break-inside: auto;\n        margin-bottom: 0.6rem;\n      }\n\n      /* Table card header (sub_number + title) stays with the first data row */\n      .table-card-header {\n        break-after: avoid;\n        page-break-after: avoid;\n      }\n\n      /* Repeat column headers on every page for long tables */\n      thead { display: table-header-group; }\n      tfoot { display: table-footer-group; }\n\n      /* No row orphans/widows — a row that starts a page carries at least 2 rows */\n      tr {\n        break-inside: avoid;\n        page-break-inside: avoid;\n      }\n\n      /* Summary always starts on a fresh line and never splits */\n      .summary-card {\n        break-before: auto;\n        page-break-before: auto;\n        break-inside: avoid;\n        page-page-inside: avoid;\n        margin-top: 1rem;\n      }\n\n      /* Suppress interactive chrome artifacts */\n      tr:hover td { background: transparent; }\n    }\n\n    @page {\n      size: A4;\n      margin: 18mm 15mm 20mm 15mm;\n\n      @bottom-center {\n        content: counter(page) \" / \" counter(pages);\n        font-family: system-ui, sans-serif;\n        font-size: 9px;\n        color: #9ca3af;\n      }\n    }\n  </style>\n</head>\n<body>\n<div class=\"page\">\n\n  <!-- Header -->\n  <div class=\"report-header\">\n    <h1>{{ header.title }}</h1>\n    {% if header.subtitle %}<p class=\"subtitle\">{{ header.subtitle }}</p>{% endif %}\n    <div class=\"meta-grid\">\n      {% if header.engineer %}\n      <div class=\"meta-item\">\n        <span class=\"meta-label\">Engineer</span>\n        <span class=\"meta-value\">{{ header.engineer }}</span>\n      </div>\n      {% endif %}\n      {% if header.uut_name %}\n      <div class=\"meta-item\">\n        <span class=\"meta-label\">UUT</span>\n        <span class=\"meta-value\">{{ header.uut_name }}</span>\n      </div>\n      {% endif %}\n      {% if header.uut_serial %}\n      <div class=\"meta-item\">\n        <span class=\"meta-label\">Serial</span>\n        <span class=\"meta-value\">{{ header.uut_serial }}</span>\n      </div>\n      {% endif %}\n      {% if header.revision %}\n      <div class=\"meta-item\">\n        <span class=\"meta-label\">Revision</span>\n        <span class=\"meta-value\">{{ header.revision }}</span>\n      </div>\n      {% endif %}\n      <div class=\"meta-item\">\n        <span class=\"meta-label\">Date</span>\n        <span class=\"meta-value\">{{ header.date }}</span>\n      </div>\n      {% for key, val in header.extra_fields.items() %}\n      <div class=\"meta-item\">\n        <span class=\"meta-label\">{{ key }}</span>\n        <span class=\"meta-value\">{{ val }}</span>\n      </div>\n      {% endfor %}\n    </div>\n  </div>\n\n  <!-- Sections -->\n  {% for section in sections %}\n  <div class=\"section\">\n    <div class=\"section-heading\">{{ section.number }}. {{ section.title }}</div>\n    {% if section.subtitle %}<div class=\"section-subtitle\">{{ section.subtitle }}</div>{% endif %}\n\n    {% for table in section.tables %}\n    <div class=\"table-card\">\n      <div class=\"table-card-header\">\n        <span class=\"table-card-number\">{{ table.sub_number }}</span>\n        <span class=\"table-card-title\">{{ table.title }}</span>\n      </div>\n      <table>\n        <thead>\n          <tr>\n            <th>Test No.</th>\n            <th>Name</th>\n            <th>Value</th>\n            <th>Unit</th>\n            <th>Expected</th>\n            <th>Pass / Fail</th>\n            <th>Notes</th>\n          </tr>\n        </thead>\n        <tbody>\n          {% for m in table.measurements %}\n          <tr>\n            <td class=\"test-num\">{{ m.test_number }}</td>\n            <td>{{ m.name }}</td>\n            <td><strong>{{ m.value }}</strong></td>\n            <td>{{ m.unit }}</td>\n            <td>{{ m.expected }}</td>\n            <td>\n              {% if m.status == \"PASS\" %}\n                <span class=\"badge badge-pass\">PASS</span>\n              {% elif m.status == \"FAIL\" %}\n                <span class=\"badge badge-fail\">FAIL</span>\n              {% else %}\n                <span class=\"badge badge-na\">N/A</span>\n              {% endif %}\n            </td>\n            <td class=\"notes-cell\">{{ m.notes }}</td>\n          </tr>\n          {% endfor %}\n        </tbody>\n      </table>\n    </div>\n    {% endfor %}\n  </div>\n  {% endfor %}\n\n  <!-- Summary -->\n  <div class=\"summary-card\">\n    <span class=\"summary-title\">Summary</span>\n    <div class=\"summary-stat\">\n      <span class=\"summary-num num-total\">{{ summary.total }}</span>\n      <span class=\"summary-label\">Total</span>\n    </div>\n    <div class=\"divider\"></div>\n    <div class=\"summary-stat\">\n      <span class=\"summary-num num-pass\">{{ summary.passed }}</span>\n      <span class=\"summary-label\">Passed</span>\n    </div>\n    <div class=\"summary-stat\">\n      <span class=\"summary-num num-fail\">{{ summary.failed }}</span>\n      <span class=\"summary-label\">Failed</span>\n    </div>\n    <div class=\"divider\"></div>\n    <div class=\"summary-stat\">\n      <span class=\"summary-num num-rate\">{{ summary.pass_rate }}%</span>\n      <span class=\"summary-label\">Pass Rate</span>\n    </div>\n  </div>\n\n</div>\n</body>\n</html>\n"};
+
+// ── Preset snippets ───────────────────────────────────────────────────────
+const PRESETS = {
+minimal: `from instrumation_report import Report, Measurement
+
+r = Report()
+r.add(Measurement("3.3V Rail",  3.31,  "V",   condition=(3.2, 3.4)))
+r.add(Measurement("5V Rail",    5.02,  "V",   condition=(4.9, 5.1)))
+r.add(Measurement("12V Rail",   11.0,  "V",   condition=(11.5, 12.5)))
+r.add(Measurement("Frequency",  1002,  "Hz",  condition=lambda v: v > 1000))
+r.add(Measurement("Fan Speed",  2950,  "rpm", condition=lambda v: v > 2500))
+r.add(Measurement("Temp",       24.3,  "C"))
+
+r.generate_html("/tmp/report.html")`,
+
+header: `from instrumation_report import Report, ReportHeader, Measurement
+
+report = Report(header=ReportHeader(
+    title="Power Supply Acceptance Test",
+    subtitle="Final QA — Line 3",
+    engineer="Abduznik",
+    uut_name="PSU-500W",
+    uut_serial="SN-00042",
+    revision="B",
+    extra_fields={"Batch": "2024-Q4", "Station": "TS-01"},
+))
+
+report.add(Measurement("Output Voltage", 12.01, "V",  condition=(11.8, 12.2), expected="11.8–12.2V"))
+report.add(Measurement("Ripple",          18.5, "mV", condition=lambda v: v < 50, expected="< 50 mV"))
+report.add(Measurement("Efficiency",      88.4, "%",  condition=85.0, expected=">= 85%"))
+report.add(Measurement("Heatsink Temp",   42.3, "°C"))
+
+report.generate_html("/tmp/report.html")`,
+
+structured: `from instrumation_report import Report, ReportHeader, Section, TestTable, Measurement
+
+report = Report(header=ReportHeader(
+    title="RF Module Validation",
+    engineer="Abduznik",
+    uut_serial="SN-2024-001",
+    revision="A",
+))
+
+s1 = Section(number="1", title="Power Supply", subtitle="DC rail checks")
+t1 = TestTable(title="Voltage Rails", sub_number="1.1")
+t1.add(Measurement("3.3V Rail", 3.31, "V", condition=(3.2, 3.4),   test_number="1.1.1", expected="3.2–3.4V"))
+t1.add(Measurement("5V Rail",   5.02, "V", condition=(4.9, 5.1),   test_number="1.1.2", expected="4.9–5.1V"))
+t1.add(Measurement("12V Rail",  11.0, "V", condition=(11.5, 12.5), test_number="1.1.3", expected="11.5–12.5V", notes="Under spec"))
+s1.add_table(t1)
+report.add_section(s1)
+
+s2 = Section(number="2", title="RF Performance", subtitle="50Ω termination")
+t2 = TestTable(title="Frequency Response", sub_number="2.1")
+t2.add(Measurement("Center Freq",    2401.5, "MHz", condition=(2400, 2403), test_number="2.1.1"))
+t2.add(Measurement("Return Loss",      18.5, "dB",  condition=15.0,         test_number="2.1.2", expected=">= 15dB"))
+t2.add(Measurement("Insertion Loss",    2.1, "dB",  condition=lambda v: v < 3, test_number="2.1.3"))
+s2.add_table(t2)
+report.add_section(s2)
+
+report.generate_html("/tmp/report.html")`,
+
+conditions: `from instrumation_report import Report, Measurement
+
+r = Report()
+
+# Range tuple — lo <= value <= hi (inclusive)
+r.add(Measurement("Voltage",     4.7,   "V",      condition=(4.0, 5.0),              expected="4.0–5.0 V"))
+# Lambda — any logic you like
+r.add(Measurement("Frequency",   1002,  "Hz",     condition=lambda v: v > 1000,      expected="> 1000 Hz"))
+# Two-sided lambda
+r.add(Measurement("Phase",       -2.1,  "deg",    condition=lambda v: -5 <= v <= 5,  expected="±5°"))
+# Float threshold — value >= threshold
+r.add(Measurement("Return Loss", 18.5,  "dB",     condition=15.0,                    expected=">= 15 dB"))
+# Absolute tolerance via lambda
+r.add(Measurement("Ref Clock",   10.003,"MHz",    condition=lambda v: abs(v-10)<0.01, expected="10 ± 0.01 MHz"))
+# No condition — N/A
+r.add(Measurement("Temperature", 24.3,  "°C"))
+
+r.generate_html("/tmp/report.html")`,
+
+loop: `from instrumation_report import Report, ReportHeader, Measurement
+
+channels = [
+    {"name": "Ch1", "value": 3.29, "unit": "V", "lo": 3.2,  "hi": 3.4},
+    {"name": "Ch2", "value": 5.01, "unit": "V", "lo": 4.9,  "hi": 5.1},
+    {"name": "Ch3", "value": 11.8, "unit": "V", "lo": 11.5, "hi": 12.5},
+    {"name": "Ch4", "value": 24.7, "unit": "V", "lo": 23.5, "hi": 24.5},
+    {"name": "Ch5", "value": 0.98, "unit": "V", "lo": 0.9,  "hi": 1.1},
+]
+
+report = Report(header=ReportHeader(title="Multi-Channel Voltage Sweep"))
+
+for i, ch in enumerate(channels, 1):
+    report.add(Measurement(
+        name=ch["name"],
+        value=ch["value"],
+        unit=ch["unit"],
+        condition=(ch["lo"], ch["hi"]),
+        test_number=str(i),
+        expected=f"{ch['lo']}–{ch['hi']} {ch['unit']}",
+    ))
+
+report.generate_html("/tmp/report.html")`,
+};
+
+// ── Pyodide bootstrap ─────────────────────────────────────────────────────
+let pyodide = null;
+
+async function initPyodide() {
+  pyodide = await loadPyodide();
+  await pyodide.loadPackage("micropip");
+  const micropip = pyodide.pyimport("micropip");
+  await micropip.install(["jinja2", "openpyxl"]);
+
+  // Write the library into Pyodide's in-memory filesystem
+  pyodide.runPython(`
+import os
+os.makedirs("instrumation_report/templates", exist_ok=True)
+`);
+  for (const [path, content] of Object.entries(LIB_FILES)) {
+    pyodide.FS.writeFile(path, content, { encoding: "utf8" });
+  }
+
+  // Intercept generate_html to capture the output without writing to disk
+  // We patch it after the module is importable by injecting a wrapper
+  pyodide.runPython(`
+import sys, pathlib, importlib
+
+# Add cwd to path so instrumation_report is importable
+if "" not in sys.path:
+    sys.path.insert(0, "")
+
+# Patch generate_html to also write to a known capture path
+import instrumation_report.report as _r
+_orig_generate_html = _r.Report.generate_html
+
+def _patched_generate_html(self, output_path):
+    _orig_generate_html(self, output_path)
+    import shutil
+    shutil.copy(output_path, "/tmp/_pg_last_output.html")
+
+_r.Report.generate_html = _patched_generate_html
+`);
+
+  document.getElementById("pg-loading").classList.add("hidden");
+  setStatus("Ready — Ctrl+Enter to run", "ok");
+}
+
+// ── Run ───────────────────────────────────────────────────────────────────
+async function runCode() {
+  if (!pyodide) return;
+  const code = document.getElementById("pg-editor").value.trim();
+  if (!code) return;
+
+  const btn = document.getElementById("run-btn");
+  btn.disabled = true;
+  btn.textContent = "Running…";
+  setStatus("Running…", "busy");
+
+  try {
+    // Clear any previous capture
+    pyodide.runPython(`
+import pathlib
+p = pathlib.Path("/tmp/_pg_last_output.html")
+if p.exists(): p.unlink()
+`);
+
+    await pyodide.runPythonAsync(code);
+
+    // Try to read the captured HTML
+    const captured = pyodide.runPython(`
+import pathlib
+p = pathlib.Path("/tmp/_pg_last_output.html")
+p.read_text(encoding="utf-8") if p.exists() else ""
+`);
+
+    if (captured) {
+      showHTML(captured);
+      setStatus("✓ Report rendered", "ok");
+    } else {
+      setStatus("✓ Done — call generate_html() to see a report", "ok");
+    }
+  } catch (e) {
+    const msg = e.message || String(e);
+    showHTML(`<div style="padding:1.5rem;font-family:monospace;font-size:13px;color:#b91c1c;background:#fff2f2;white-space:pre-wrap">${escHtml(msg)}</div>`);
+    setStatus("Error", "err");
+  }
+
+  btn.disabled = false;
+  btn.textContent = "▶ Run";
+}
+
+function showHTML(html) {
+  document.getElementById("pg-empty").style.display = "none";
+  const iframe = document.getElementById("pg-output-iframe");
+  iframe.style.display = "block";
+  iframe.srcdoc = html;
+}
+
+function clearOutput() {
+  document.getElementById("pg-empty").style.display = "flex";
+  const iframe = document.getElementById("pg-output-iframe");
+  iframe.style.display = "none";
+  iframe.srcdoc = "";
+  setStatus("", "");
+}
+
+function setStatus(msg, cls) {
+  const el = document.getElementById("pg-status");
+  el.textContent = msg;
+  el.className = cls;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+
+function loadPreset(name, btn) {
+  document.getElementById("pg-editor").value = PRESETS[name];
+  document.querySelectorAll(".preset-chip").forEach(c => c.classList.remove("active"));
+  if (btn) btn.classList.add("active");
+  clearOutput();
+}
+
+document.addEventListener("keydown", e => {
+  if ((e.metaKey || e.ctrlKey) && e.key === "Enter") { e.preventDefault(); runCode(); }
+});
+
+// Boot
+document.getElementById("pg-editor").value = PRESETS["minimal"];
+initPyodide().catch(err => {
+  document.getElementById("pg-loading").classList.add("hidden");
+  setStatus("Failed to load Pyodide", "err");
+  console.error(err);
+});
+</script>
+<script>
+(function(){
+  const saved = localStorage.getItem("ir-theme");
+  if (saved === "light") document.documentElement.classList.add("light");
+})();
+function toggleTheme() {
+  const light = document.documentElement.classList.toggle("light");
+  localStorage.setItem("ir-theme", light ? "light" : "dark");
+}
+</script>
+</body>
+</html>

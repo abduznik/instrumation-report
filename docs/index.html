@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>instrumation-report — UUT measurement reports in Python</title>
+  <link rel="stylesheet" href="assets/style.css" />
+  <style>
+    /* ── Hero ── */
+    .hero {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 5rem 2rem 3.5rem;
+      text-align: center;
+    }
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.1rem);
+      font-weight: 800;
+      letter-spacing: -.04em;
+      line-height: 1.1;
+      margin-bottom: 1rem;
+    }
+    .hero h1 .hl { color: var(--accent); }
+    .hero p { font-size: 1.05rem; color: var(--muted); max-width: 520px; margin: 0 auto 2rem; }
+    .hero-btns { display: flex; gap: .75rem; justify-content: center; flex-wrap: wrap; margin-bottom: 3rem; }
+
+    /* ── Install ── */
+    .install-center {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+    }
+
+    /* ── Report preview centered ── */
+    .preview-wrap {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 0 2rem 4rem;
+    }
+    .section-label {
+      font-size: .72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+
+    /* ── Output cards ── */
+    .output-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-bottom: 3rem;
+    }
+    .output-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.2rem;
+      text-align: center;
+    }
+    .output-card .oc-icon { font-size: 2rem; margin-bottom: .6rem; }
+    .output-card h3 { font-size: .9rem; font-weight: 700; margin-bottom: .3rem; }
+    .output-card p  { font-size: .8rem; color: var(--muted); }
+
+    /* ── Quick code ── */
+    .quick-section {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 0 2rem 5rem;
+    }
+  </style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <a class="nav-brand" href="index.html"><span>instrumation</span>-report</a>
+  <div class="nav-links">
+    <a href="index.html" class="active">Home</a>
+    <a href="get-started.html">Get Started</a>
+    <a href="examples.html">Examples</a>
+    <a href="api.html">API</a>
+    <a href="try.html">Try It</a>
+    <a href="https://github.com/abduznik/instrumation-report" class="nav-gh">GitHub ↗</a>
+    <button class="theme-btn" onclick="toggleTheme()" title="Toggle theme">
+      <span class="icon-sun">☀︎</span>
+      <span class="icon-moon">◑</span>
+    </button>
+  </div>
+</nav>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="badge-row" style="justify-content:center">
+    <span class="badge badge-blue">v0.0.1</span>
+    <span class="badge badge-green">MIT</span>
+    <span class="badge">Python 3.10+</span>
+  </div>
+  <h1>UUT test reports,<br><span class="hl">without the boilerplate.</span></h1>
+  <p>A lightweight Python library for generating structured measurement reports from test data.
+     HTML, Excel, and PDF output with automatic pass/fail evaluation.</p>
+
+  <div class="install-center">
+    <div class="install-strip">
+      <span class="prompt">$</span>
+      <span id="install-cmd">pip install instrumation-report</span>
+      <button class="copy-btn" onclick="copyInstall()">copy</button>
+    </div>
+  </div>
+
+  <div class="hero-btns">
+    <a href="get-started.html" class="btn btn-primary">Get Started →</a>
+    <a href="examples.html" class="btn btn-ghost">See Examples</a>
+    <a href="try.html" class="btn btn-ghost">Try It Live</a>
+  </div>
+</div>
+
+<!-- Output formats -->
+<div class="preview-wrap">
+  <p class="section-label">Output formats</p>
+  <div class="output-grid">
+    <div class="output-card">
+      <div class="oc-icon">📄</div>
+      <h3>HTML</h3>
+      <p>Self-contained file. Section headings, green/red badges, summary block. Opens in any browser.</p>
+    </div>
+    <div class="output-card">
+      <div class="oc-icon">📊</div>
+      <h3>Excel</h3>
+      <p>Structured .xlsx with merged headers, per-row colour fills, and a summary table.</p>
+    </div>
+    <div class="output-card">
+      <div class="oc-icon">🖨️</div>
+      <h3>PDF</h3>
+      <p>Rendered from the HTML template via weasyprint. Proper A4 page breaks and page numbers.</p>
+    </div>
+  </div>
+
+  <!-- Live preview of what the report looks like -->
+  <p class="section-label">What the report looks like</p>
+  <div class="preview-card">
+    <div class="preview-header">
+      <h3>RF Subsystem Validation</h3>
+      <p>Production Test — Board Rev A</p>
+      <div class="preview-meta">
+        <div><span class="preview-meta-label">Engineer</span><span class="preview-meta-value">Abduznik</span></div>
+        <div><span class="preview-meta-label">UUT</span><span class="preview-meta-value">Signal Analyzer Module</span></div>
+        <div><span class="preview-meta-label">Serial</span><span class="preview-meta-value">SN-2024-001</span></div>
+        <div><span class="preview-meta-label">Revision</span><span class="preview-meta-value">A</span></div>
+        <div><span class="preview-meta-label">Batch</span><span class="preview-meta-value">LOT-88B</span></div>
+      </div>
+    </div>
+    <table class="preview-table">
+      <thead><tr><th>Test No.</th><th>Name</th><th>Value</th><th>Unit</th><th>Expected</th><th>Pass / Fail</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td style="color:var(--muted);font-family:monospace;font-size:.72rem">1.1.1</td><td>3.3V Rail</td><td><strong>3.31</strong></td><td>V</td><td>3.2 – 3.4 V</td><td><span class="pill pill-pass">PASS</span></td><td style="color:var(--muted);font-size:.78rem;font-style:italic">Nominal</td></tr>
+        <tr><td style="color:var(--muted);font-family:monospace;font-size:.72rem">1.1.2</td><td>5V Rail</td><td><strong>5.02</strong></td><td>V</td><td>4.9 – 5.1 V</td><td><span class="pill pill-pass">PASS</span></td><td></td></tr>
+        <tr><td style="color:var(--muted);font-family:monospace;font-size:.72rem">1.1.3</td><td>12V Rail</td><td><strong>11.0</strong></td><td>V</td><td>11.5 – 12.5 V</td><td><span class="pill pill-fail">FAIL</span></td><td style="color:var(--muted);font-size:.78rem;font-style:italic">Under spec</td></tr>
+        <tr><td style="color:var(--muted);font-family:monospace;font-size:.72rem">2.2.1</td><td>Noise Figure</td><td><strong>3.8</strong></td><td>dB</td><td>&lt; 5 dB</td><td><span class="pill pill-pass">PASS</span></td><td></td></tr>
+        <tr><td></td><td>Temperature</td><td><strong>24.3</strong></td><td>°C</td><td>—</td><td><span class="pill pill-na">N/A</span></td><td style="color:var(--muted);font-size:.78rem;font-style:italic">Ambient</td></tr>
+      </tbody>
+    </table>
+    <div class="preview-summary">
+      <div><span class="s-num">5</span><span class="s-lbl">Total</span></div>
+      <div><span class="s-num" style="color:var(--pass)">3</span><span class="s-lbl">Passed</span></div>
+      <div><span class="s-num" style="color:var(--fail)">1</span><span class="s-lbl">Failed</span></div>
+      <div><span class="s-num" style="color:var(--accent)">75.0%</span><span class="s-lbl">Pass Rate</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- Minimal code teaser -->
+<div class="quick-section">
+  <p class="section-label">Looks like this in code</p>
+  <div class="code-block">
+    <div class="code-block-header"><span>minimal example</span><button class="copy-btn" onclick="copyCode('minimal')">copy</button></div>
+    <pre id="minimal"><span class="kw">from</span> instrumation_report <span class="kw">import</span> <span class="cls">Report</span>, <span class="cls">Measurement</span>
+
+r <span class="op">=</span> <span class="cls">Report</span>()
+r.<span class="fn">add</span>(<span class="cls">Measurement</span>(<span class="str">"3.3V Rail"</span>,  <span class="num">3.31</span>, <span class="str">"V"</span>,  condition<span class="op">=</span>(<span class="num">3.2</span>, <span class="num">3.4</span>)))
+r.<span class="fn">add</span>(<span class="cls">Measurement</span>(<span class="str">"5V Rail"</span>,    <span class="num">5.02</span>, <span class="str">"V"</span>,  condition<span class="op">=</span>(<span class="num">4.9</span>, <span class="num">5.1</span>)))
+r.<span class="fn">add</span>(<span class="cls">Measurement</span>(<span class="str">"Frequency"</span>,  <span class="num">1002</span>, <span class="str">"Hz"</span>, condition<span class="op">=lambda</span> v: v <span class="op">&gt;</span> <span class="num">1000</span>))
+
+r.<span class="fn">generate_html</span>(<span class="str">"report.html"</span>)
+r.<span class="fn">generate_excel</span>(<span class="str">"report.xlsx"</span>)</pre>
+  </div>
+  <div style="display:flex;gap:.75rem;flex-wrap:wrap">
+    <a href="get-started.html" class="btn btn-primary">Full tutorial →</a>
+    <a href="try.html" class="btn btn-ghost">Run this in your browser</a>
+  </div>
+</div>
+
+<footer class="site-footer">
+  instrumation-report · MIT License ·
+  <a href="https://github.com/abduznik/instrumation-report">GitHub</a> ·
+  <a href="https://pypi.org/project/instrumation-report/">PyPI</a>
+</footer>
+
+<script>
+function copyInstall() {
+  navigator.clipboard.writeText("pip install instrumation-report").then(() => {
+    const b = document.querySelector(".copy-btn");
+    b.textContent = "copied!";
+    setTimeout(() => b.textContent = "copy", 1500);
+  });
+}
+function copyCode(id) {
+  const text = document.getElementById(id).innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    event.target.textContent = "copied!";
+    setTimeout(() => event.target.textContent = "copy", 1500);
+  });
+}
+</script>
+<script>
+(function(){
+  const saved = localStorage.getItem("ir-theme");
+  if (saved === "light") document.documentElement.classList.add("light");
+})();
+function toggleTheme() {
+  const light = document.documentElement.classList.toggle("light");
+  localStorage.setItem("ir-theme", light ? "light" : "dark");
+}
+</script>
+</body>
+</html>

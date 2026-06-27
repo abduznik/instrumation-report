@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Examples — instrumation-report</title>
+  <link rel="stylesheet" href="assets/style.css" />
+  <style>
+    .example-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 2.5rem;
+      overflow: hidden;
+    }
+    .example-card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding: 1.1rem 1.25rem .8rem;
+      border-bottom: 1px solid var(--border);
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .example-card-header h3 { font-size: 1rem; font-weight: 700; color: var(--text); margin-bottom: .2rem; }
+    .example-card-header p  { font-size: .82rem; color: var(--muted); }
+    .example-dl { display: flex; gap: .5rem; flex-wrap: wrap; flex-shrink: 0; }
+    .example-dl a {
+      display: inline-block;
+      padding: .25rem .7rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: .72rem;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .example-dl a:hover { color: var(--text); border-color: var(--muted); text-decoration: none; }
+    .example-card .code-block { border-radius: 0; border-left: none; border-right: none; border-bottom: none; margin-bottom: 0; }
+    .example-card .code-block-header { border-top: none; }
+    .tag {
+      display: inline-block;
+      padding: .15rem .55rem;
+      border-radius: 999px;
+      font-size: .68rem;
+      font-weight: 600;
+      background: rgba(79,142,247,.1);
+      color: var(--accent);
+      border: 1px solid rgba(79,142,247,.2);
+      margin-right: .3rem;
+    }
+  </style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <a class="nav-brand" href="index.html"><span>instrumation</span>-report</a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="get-started.html">Get Started</a>
+    <a href="examples.html" class="active">Examples</a>
+    <a href="api.html">API</a>
+    <a href="try.html">Try It</a>
+    <a href="https://github.com/abduznik/instrumation-report" class="nav-gh">GitHub ↗</a>
+    <button class="theme-btn" onclick="toggleTheme()" title="Toggle theme">
+      <span class="icon-sun">☀︎</span>
+      <span class="icon-moon">◑</span>
+    </button>
+  </div>
+</nav>
+
+<div class="page-wrap prose">
+
+  <div class="badge-row"><span class="badge badge-blue">Examples</span></div>
+  <h1>Examples</h1>
+  <p>Copy-paste ready examples, from a three-liner to a full multi-section RF validation report.
+     All downloadable as HTML, Excel, and PDF.</p>
+  <hr />
+
+  <!-- 1. Barebones -->
+  <div class="example-card">
+    <div class="example-card-header">
+      <div>
+        <h3>Barebones — absolute minimum</h3>
+        <p><span class="tag">flat API</span> Three measurements, no header, no sections. One file output.</p>
+      </div>
+    </div>
+    <div class="code-block">
+      <div class="code-block-header"><span>barebones.py</span><button class="copy-btn" onclick="copyCode('e1')">copy</button></div>
+      <pre id="e1"><span class="kw">from</span> instrumation_report <span class="kw">import</span> <span class="cls">Report</span>, <span class="cls">Measurement</span>
+
+r <span class="op">=</span> <span class="cls">Report</span>()
+r.<span class="fn">add</span>(<span class="cls">Measurement</span>(<span class="str">"3.3V Rail"</span>, <span class="num">3.31</span>, <span class="str">"V"</span>,  condition<span class="op">=</span>(<span class="num">3.2</span>,  <span class="num">3.4</span>)))
+r.<span class="fn">add</span>(<span class="cls">Measurement</span>(<span class="str">"5V Rail"</span>,   <span class="num">5.02</span>, <span class="str">"V"</span>,  condition<span class="op">=</span>(<span class="num">4.9</span>,  <span class="num">5.1</span>)))
+r.<span class="fn">add</span>(<span class="cls">Measurement</span>(<span class="str">"Fan Speed"</span>, <span class="num">2950</span>, <span class="str">"rpm"</span>, condition<span class="op">=lambda</span> v: v <span class="op">&gt;</span> <span class="num">2500</span>))
+r.<span class="fn">generate_html</span>(<span class="str">"report.html"</span>)</pre>
+    </div>
+  </div>
+
+  <!-- 2. With header -->
+  <div class="example-card">
+    <div class="example-card-header">
+      <div>
+        <h3>With UUT header</h3>
+        <p><span class="tag">ReportHeader</span> Adds engineer, serial, revision and custom metadata to the top of the report.</p>
+      </div>
+    </div>
+    <div class="code-block">
+      <div class="code-block-header"><span>with_header.py</span><button class="copy-btn" onclick="copyCode('e2')">copy</button></div>
+      <pre id="e2"><span class="kw">from</span> instrumation_report <span class="kw">import</span> <span class="cls">Report</span>, <span class="cls">ReportHeader</span>, <span class="cls">Measurement</span>
+
+report <span class="op">=</span> <span class="cls">Report</span>(header<span class="op">=</span><span class="cls">ReportHeader</span>(
+    title<span class="op">=</span><span class="str">"Power Supply Acceptance Test"</span>,
+    subtitle<span class="op">=</span><span class="str">"Final QA — Line 3"</span>,
+    engineer<span class="op">=</span><span class="str">"Abduznik"</span>,
+    uut_name<span class="op">=</span><span class="str">"PSU-500W"</span>,
+    uut_serial<span class="op">=</span><span class="str">"SN-00042"</span>,
+    revision<span class="op">=</span><span class="str">"B"</span>,
+    extra_fields<span class="op">=</span>{<span class="str">"Batch"</span>: <span class="str">"2024-Q4"</span>, <span class="str">"Station"</span>: <span class="str">"TS-01"</span>},
+))
+
+report.<span class="fn">add</span>(<span class="cls">Measurement</span>(<span class="str">"Output Voltage"</span>, <span class="num">12.01</span>, <span class="str">"V"</span>,  condition<span class="op">=</span>(<span class="num">11.8</span>,  <span class="num">12.2</span>)))
+report.<span class="fn">add</span>(<span class="cls">Measurement</span>(<span class="str">"Ripple"</span>,         <span class="num">18.5</span>,  <span class="str">"mV"</span>, condition<span class="op">=lambda</span> v: v <span class="op">&lt;</span> <span class="num">50</span>))
+report.<span class="fn">add</span>(<span class="cls">Measurement</span>(<span class="str">"Efficiency"</span>,    <span class="num">88.4</span>,  <span class="str">"%"</span>,  condition<span class="op">=</span><span class="num">85.0</span>))
+report.<span class="fn">add</span>(<span class="cls">Measurement</span>(<span class="str">"Heatsink Temp"</span>, <span class="num">42.3</span>,  <span class="str">"°C"</span>))  <span class="cm"># informational — N/A</span>
+
+report.<span class="fn">generate_html</span>(<span class="str">"report.html"</span>)
+report.<span class="fn">generate_excel</span>(<span class="str">"report.xlsx"</span>)</pre>
+    </div>
+  </div>
+
+  <!-- 3. All condition types -->
+  <div class="example-card">
+    <div class="example-card-header">
+      <div>
+        <h3>All condition types</h3>
+        <p><span class="tag">range tuple</span> <span class="tag">lambda</span> <span class="tag">threshold</span> <span class="tag">N/A</span>
+           Shows every evaluation mode side by side.</p>
+      </div>
+    </div>
+    <div class="code-block">
+      <div class="code-block-header"><span>conditions.py</span><button class="copy-btn" onclick="copyCode('e3')">copy</button></div>
+      <pre id="e3"><span class="kw">from</span> instrumation_report <span class="kw">import</span> <span class="cls">Report</span>, <span class="cls">Measurement</span>
+
+r <span class="op">=</span> <span class="cls">Report</span>()
+
+<span class="cm"># Range tuple — lo &lt;= value &lt;= hi</span>
+r.<span class="fn">add</span>(<span class="cls">Measurement</span>(<span class="str">"Voltage"</span>,       <span class="num">4.7</span>,  <span class="str">"V"</span>,   condition<span class="op">=</span>(<span class="num">4.0</span>, <span class="num">5.0</span>),       expected<span class="op">=</span><span class="str">"4.0–5.0 V"</span>))
+
+<span class="cm"># Lambda — any callable returning bool</span>
+r.<span class="fn">add</span>(<span class="cls">Measurement</span>(<span class="str">"Frequency"</span>,     <span class="num">1002</span>, <span class="str">"Hz"</span>,  condition<span class="op">=lambda</span> v: v <span class="op">&gt;</span> <span class="num">1000</span>, expected<span class="op">=</span><span class="str">"&gt; 1000 Hz"</span>))
+
+<span class="cm"># Lambda with compound logic</span>
+r.<span class="fn">add</span>(<span class="cls">Measurement</span>(<span class="str">"Phase"</span>,         <span class="num">-2.1</span>, <span class="str">"deg"</span>, condition<span class="op">=lambda</span> v: <span class="op">-</span><span class="num">5</span> <span class="op">&lt;=</span> v <span class="op">&lt;=</span> <span class="num">5</span>, expected<span class="op">=</span><span class="str">"±5°"</span>))
+
+<span class="cm"># Threshold float — value &gt;= threshold</span>
+r.<span class="fn">add</span>(<span class="cls">Measurement</span>(<span class="str">"Return Loss"</span>,   <span class="num">18.5</span>, <span class="str">"dB"</span>,  condition<span class="op">=</span><span class="num">15.0</span>,            expected<span class="op">=</span><span class="str">"&gt;= 15 dB"</span>))
+
+<span class="cm"># No condition — appears as N/A, never pass/fails</span>
+r.<span class="fn">add</span>(<span class="cls">Measurement</span>(<span class="str">"Temperature"</span>,   <span class="num">24.3</span>, <span class="str">"°C"</span>))
+
+r.<span class="fn">generate_html</span>(<span class="str">"report.html"</span>)</pre>
+    </div>
+  </div>
+
+  <!-- 4. Structured multi-section -->
+  <div class="example-card">
+    <div class="example-card-header">
+      <div>
+        <h3>Multi-section structured report</h3>
+        <p><span class="tag">Section</span> <span class="tag">TestTable</span> Mirrors a numbered test procedure: sections, sub-tables, test numbers.</p>
+      </div>
+      <div class="example-dl">
+        <a href="https://github.com/abduznik/instrumation-report/raw/main/examples/report.html">📄 HTML</a>
+        <a href="https://github.com/abduznik/instrumation-report/raw/main/examples/report.xlsx">📊 Excel</a>
+        <a href="https://github.com/abduznik/instrumation-report/raw/main/examples/report.pdf">🖨️ PDF</a>
+      </div>
+    </div>
+    <div class="code-block">
+      <div class="code-block-header"><span>examples/generate.py</span><button class="copy-btn" onclick="copyCode('e4')">copy</button></div>
+      <pre id="e4"><span class="kw">from</span> instrumation_report <span class="kw">import</span> <span class="cls">Report</span>, <span class="cls">ReportHeader</span>, <span class="cls">Section</span>, <span class="cls">TestTable</span>, <span class="cls">Measurement</span>
+
+report <span class="op">=</span> <span class="cls">Report</span>(header<span class="op">=</span><span class="cls">ReportHeader</span>(
+    title<span class="op">=</span><span class="str">"RF Subsystem Validation"</span>,
+    subtitle<span class="op">=</span><span class="str">"Production Test — Board Rev A"</span>,
+    engineer<span class="op">=</span><span class="str">"Abduznik"</span>,
+    uut_name<span class="op">=</span><span class="str">"Signal Analyzer Module"</span>,
+    uut_serial<span class="op">=</span><span class="str">"SN-2024-001"</span>,
+    revision<span class="op">=</span><span class="str">"A"</span>,
+    extra_fields<span class="op">=</span>{<span class="str">"Batch"</span>: <span class="str">"LOT-88B"</span>, <span class="str">"Test Station"</span>: <span class="str">"TS-02"</span>},
+))
+
+<span class="cm"># Section 1 — Power</span>
+s1 <span class="op">=</span> <span class="cls">Section</span>(number<span class="op">=</span><span class="str">"1"</span>, title<span class="op">=</span><span class="str">"Power Supply Checks"</span>, subtitle<span class="op">=</span><span class="str">"DC rail validation"</span>)
+t1 <span class="op">=</span> <span class="cls">TestTable</span>(title<span class="op">=</span><span class="str">"Voltage Rails"</span>, sub_number<span class="op">=</span><span class="str">"1.1"</span>)
+t1.<span class="fn">add</span>(<span class="cls">Measurement</span>(<span class="str">"3.3V Rail"</span>, <span class="num">3.31</span>, <span class="str">"V"</span>, condition<span class="op">=</span>(<span class="num">3.2</span>, <span class="num">3.4</span>),   test_number<span class="op">=</span><span class="str">"1.1.1"</span>, expected<span class="op">=</span><span class="str">"3.2–3.4V"</span>))
+t1.<span class="fn">add</span>(<span class="cls">Measurement</span>(<span class="str">"5V Rail"</span>,   <span class="num">5.02</span>, <span class="str">"V"</span>, condition<span class="op">=</span>(<span class="num">4.9</span>, <span class="num">5.1</span>),   test_number<span class="op">=</span><span class="str">"1.1.2"</span>, expected<span class="op">=</span><span class="str">"4.9–5.1V"</span>))
+t1.<span class="fn">add</span>(<span class="cls">Measurement</span>(<span class="str">"12V Rail"</span>,  <span class="num">11.0</span>, <span class="str">"V"</span>, condition<span class="op">=</span>(<span class="num">11.5</span>, <span class="num">12.5</span>), test_number<span class="op">=</span><span class="str">"1.1.3"</span>, expected<span class="op">=</span><span class="str">"11.5–12.5V"</span>, notes<span class="op">=</span><span class="str">"Under spec"</span>))
+s1.<span class="fn">add_table</span>(t1)
+report.<span class="fn">add_section</span>(s1)
+
+<span class="cm"># Section 2 — RF</span>
+s2 <span class="op">=</span> <span class="cls">Section</span>(number<span class="op">=</span><span class="str">"2"</span>, title<span class="op">=</span><span class="str">"RF Performance"</span>)
+t2 <span class="op">=</span> <span class="cls">TestTable</span>(title<span class="op">=</span><span class="str">"Frequency Response"</span>, sub_number<span class="op">=</span><span class="str">"2.1"</span>)
+t2.<span class="fn">add</span>(<span class="cls">Measurement</span>(<span class="str">"Center Freq"</span>, <span class="num">2401.5</span>, <span class="str">"MHz"</span>, condition<span class="op">=</span>(<span class="num">2400</span>, <span class="num">2403</span>), test_number<span class="op">=</span><span class="str">"2.1.1"</span>))
+t2.<span class="fn">add</span>(<span class="cls">Measurement</span>(<span class="str">"Insertion Loss"</span>, <span class="num">2.1</span>, <span class="str">"dB"</span>, condition<span class="op">=lambda</span> v: v <span class="op">&lt;</span> <span class="num">3</span>, test_number<span class="op">=</span><span class="str">"2.1.2"</span>))
+t2.<span class="fn">add</span>(<span class="cls">Measurement</span>(<span class="str">"Return Loss"</span>,   <span class="num">18.5</span>, <span class="str">"dB"</span>, condition<span class="op">=</span><span class="num">15.0</span>,             test_number<span class="op">=</span><span class="str">"2.1.3"</span>))
+s2.<span class="fn">add_table</span>(t2)
+report.<span class="fn">add_section</span>(s2)
+
+report.<span class="fn">generate_html</span>(<span class="str">"report.html"</span>)
+report.<span class="fn">generate_excel</span>(<span class="str">"report.xlsx"</span>)
+report.<span class="fn">generate_pdf</span>(<span class="str">"report.pdf"</span>)</pre>
+    </div>
+  </div>
+
+  <!-- 5. Loop over data -->
+  <div class="example-card">
+    <div class="example-card-header">
+      <div>
+        <h3>Loop over measurement data</h3>
+        <p><span class="tag">programmatic</span> Build a report from a list of dicts — typical when reading from a CSV or instrument API.</p>
+      </div>
+    </div>
+    <div class="code-block">
+      <div class="code-block-header"><span>from_data.py</span><button class="copy-btn" onclick="copyCode('e5')">copy</button></div>
+      <pre id="e5"><span class="kw">from</span> instrumation_report <span class="kw">import</span> <span class="cls">Report</span>, <span class="cls">ReportHeader</span>, <span class="cls">Measurement</span>
+
+<span class="cm"># Could come from a CSV, a dict, instrument readings, etc.</span>
+data <span class="op">=</span> [
+    {<span class="str">"name"</span>: <span class="str">"Ch1 Voltage"</span>, <span class="str">"value"</span>: <span class="num">3.29</span>, <span class="str">"unit"</span>: <span class="str">"V"</span>, <span class="str">"lo"</span>: <span class="num">3.2</span>,  <span class="str">"hi"</span>: <span class="num">3.4</span>},
+    {<span class="str">"name"</span>: <span class="str">"Ch2 Voltage"</span>, <span class="str">"value"</span>: <span class="num">5.01</span>, <span class="str">"unit"</span>: <span class="str">"V"</span>, <span class="str">"lo"</span>: <span class="num">4.9</span>,  <span class="str">"hi"</span>: <span class="num">5.1</span>},
+    {<span class="str">"name"</span>: <span class="str">"Ch3 Voltage"</span>, <span class="str">"value"</span>: <span class="num">11.8</span>, <span class="str">"unit"</span>: <span class="str">"V"</span>, <span class="str">"lo"</span>: <span class="num">11.5</span>, <span class="str">"hi"</span>: <span class="num">12.5</span>},
+    {<span class="str">"name"</span>: <span class="str">"Ch4 Voltage"</span>, <span class="str">"value"</span>: <span class="num">24.1</span>, <span class="str">"unit"</span>: <span class="str">"V"</span>, <span class="str">"lo"</span>: <span class="num">23.5</span>, <span class="str">"hi"</span>: <span class="num">24.5</span>},
+]
+
+report <span class="op">=</span> <span class="cls">Report</span>(header<span class="op">=</span><span class="cls">ReportHeader</span>(title<span class="op">=</span><span class="str">"Multi-Channel Voltage Sweep"</span>))
+
+<span class="kw">for</span> i, row <span class="kw">in</span> <span class="fn">enumerate</span>(data, <span class="num">1</span>):
+    report.<span class="fn">add</span>(<span class="cls">Measurement</span>(
+        name<span class="op">=</span>row[<span class="str">"name"</span>],
+        value<span class="op">=</span>row[<span class="str">"value"</span>],
+        unit<span class="op">=</span>row[<span class="str">"unit"</span>],
+        condition<span class="op">=</span>(row[<span class="str">"lo"</span>], row[<span class="str">"hi"</span>]),
+        test_number<span class="op">=</span><span class="fn">str</span>(i),
+        expected<span class="op">=</span><span class="fn">f</span><span class="str">"{row['lo']}–{row['hi']} V"</span>,
+    ))
+
+report.<span class="fn">generate_html</span>(<span class="str">"sweep_report.html"</span>)</pre>
+    </div>
+  </div>
+
+  <!-- 6. Mixed flat + sections -->
+  <div class="example-card">
+    <div class="example-card-header">
+      <div>
+        <h3>Mix flat and structured</h3>
+        <p><span class="tag">flat + sections</span> Use <code>report.add()</code> and <code>add_section()</code> together. Flat measurements appear after all sections.</p>
+      </div>
+    </div>
+    <div class="code-block">
+      <div class="code-block-header"><span>mixed.py</span><button class="copy-btn" onclick="copyCode('e6')">copy</button></div>
+      <pre id="e6"><span class="kw">from</span> instrumation_report <span class="kw">import</span> <span class="cls">Report</span>, <span class="cls">Section</span>, <span class="cls">TestTable</span>, <span class="cls">Measurement</span>
+
+r <span class="op">=</span> <span class="cls">Report</span>()
+
+<span class="cm"># Structured section</span>
+s <span class="op">=</span> <span class="cls">Section</span>(number<span class="op">=</span><span class="str">"1"</span>, title<span class="op">=</span><span class="str">"Core Tests"</span>)
+t <span class="op">=</span> <span class="cls">TestTable</span>(title<span class="op">=</span><span class="str">"Voltages"</span>, sub_number<span class="op">=</span><span class="str">"1.1"</span>)
+t.<span class="fn">add</span>(<span class="cls">Measurement</span>(<span class="str">"3.3V Rail"</span>, <span class="num">3.31</span>, <span class="str">"V"</span>, condition<span class="op">=</span>(<span class="num">3.2</span>, <span class="num">3.4</span>)))
+s.<span class="fn">add_table</span>(t)
+r.<span class="fn">add_section</span>(s)
+
+<span class="cm"># Flat measurements (quick additions, appended after sections)</span>
+r.<span class="fn">add</span>(<span class="cls">Measurement</span>(<span class="str">"Board Temperature"</span>, <span class="num">38.2</span>, <span class="str">"°C"</span>))
+r.<span class="fn">add</span>(<span class="cls">Measurement</span>(<span class="str">"Firmware Version"</span>,  <span class="num">3.0</span>,  <span class="str">""</span>,   condition<span class="op">=</span><span class="num">3.0</span>, notes<span class="op">=</span><span class="str">"Min required"</span>))
+
+r.<span class="fn">generate_html</span>(<span class="str">"report.html"</span>)</pre>
+    </div>
+  </div>
+
+  <div style="margin-top:1rem">
+    <a href="try.html" class="btn btn-primary">Run any of these live →</a>
+    <a href="api.html" class="btn btn-ghost" style="margin-left:.5rem">Full API reference</a>
+  </div>
+
+</div>
+
+<footer class="site-footer">
+  instrumation-report · MIT License ·
+  <a href="https://github.com/abduznik/instrumation-report">GitHub</a> ·
+  <a href="https://pypi.org/project/instrumation-report/">PyPI</a>
+</footer>
+
+<script>
+function copyCode(id) {
+  const text = document.getElementById(id).innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    event.target.textContent = "copied!";
+    setTimeout(() => event.target.textContent = "copy", 1500);
+  });
+}
+</script>
+<script>
+(function(){
+  const saved = localStorage.getItem("ir-theme");
+  if (saved === "light") document.documentElement.classList.add("light");
+})();
+function toggleTheme() {
+  const light = document.documentElement.classList.toggle("light");
+  localStorage.setItem("ir-theme", light ? "light" : "dark");
+}
+</script>
+</body>
+</html>

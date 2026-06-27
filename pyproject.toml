@@ -1,0 +1,44 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "instrumation-report"
+version = "0.0.1"
+description = "Lightweight UUT measurement reporting library — HTML, Excel, and PDF output with pass/fail evaluation"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+dependencies = [
+    "jinja2>=3.1",
+    "openpyxl>=3.1",
+]
+keywords = ["measurement", "report", "instrumentation", "uut", "html", "excel", "pdf", "testing"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+]
+
+[project.optional-dependencies]
+pdf  = ["weasyprint>=60"]
+test = ["pytest>=8"]
+
+[project.urls]
+Homepage    = "https://github.com/abduznik/instrumation-report"
+Repository  = "https://github.com/abduznik/instrumation-report"
+"Bug Tracker" = "https://github.com/abduznik/instrumation-report/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["instrumation_report"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_classes = ["Test*"]
+python_files = ["test_*.py"]
+filterwarnings = ["ignore::pytest.PytestCollectionWarning"]
